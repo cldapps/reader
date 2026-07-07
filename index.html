@@ -2,464 +2,543 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3">
 <title>EPUB Reader</title>
 <style>
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin:0; padding:0; background:#f0ede4; color:#1a1a1a; font-family:Georgia,"Times New Roman",serif; height:100%; overflow-x:hidden; }
+/* Plain CSS2.1 only. Optimized for tiny screens (e.g. 240x320 / 320x240) */
+html, body { margin:0; padding:0; width:100%; height:100%; font-family:Georgia,"Times New Roman",serif; background:#f2f0e8; color:#222; overflow-x:hidden; }
 
-/* ── PROGRESS BAR ── always visible, 3px, top of screen */
-#progressBar { position:fixed; top:0; left:0; width:100%; height:3px; background:#d0c8b4; z-index:900; }
-#progressFill { height:3px; background:#5b4636; width:0%; }
+/* Wrapper handles landscape rotation gracefully */
+#wrapper { width:100%; min-height:100%; position:relative; overflow-x:hidden; }
 
-/* ── PICK SCREEN ── */
-#screenPick { padding:20px 14px; }
+/* Rotation Classes for keys 1 and 3 */
+body.rot-locked { overflow:hidden; }
+.rotate-left { 
+    transform: rotate(-90deg); transform-origin: center center;
+    position: absolute; top: 50%; left: 50%;
+    width: 100vh; height: 100vw;
+    margin-top: -50vw; margin-left: -50vh;
+    overflow-y: auto; overflow-x: hidden;
+}
+.rotate-right { 
+    transform: rotate(90deg); transform-origin: center center;
+    position: absolute; top: 50%; left: 50%;
+    width: 100vh; height: 100vw;
+    margin-top: -50vw; margin-left: -50vh;
+    overflow-y: auto; overflow-x: hidden;
+}
+
+#screenPick { padding:10px; text-align:center; }
 #screenPick h1 { font-size:18px; margin:0 0 6px 0; }
-#screenPick p { font-size:13px; color:#555; line-height:1.5; margin:0 0 12px; }
-#screenPick .keys { font-size:11px; color:#777; line-height:1.7; background:#e8e2d4; padding:10px; border:1px solid #c8bfaa; }
-#fileBtn { display:block; width:100%; padding:13px 0; font-size:16px; background:#5b4636; color:#fff; border:none; text-align:center; margin:14px 0 10px; }
-input[type=file] { font-size:14px; width:100%; }
-#errBox { padding:12px; background:#fdd; color:#800; font-size:13px; margin:10px 0; border:1px solid #c88; display:none; }
+#screenPick p { font-size:12px; color:#555; line-height:1.2; }
+input[type=file] { font-size:13px; width:100%; margin-top:10px; }
 
-/* ── LOADING ── */
-#loading { padding:40px 14px; font-size:15px; text-align:center; font-family:Arial,sans-serif; display:none; }
-
-/* ── READER ── */
-#readerScreen { display:none; }
-
-/* Content area — full screen, padded top for progress bar */
-#content {
-  padding: 6px 14px 80px 14px;
-  font-size: 19px;
-  line-height: 1.6;
-  min-height: 100vh;
-  padding-top: 10px;
-}
+/* Content formatting */
+#content { padding:8px 8px 15px 8px; font-size:16px; line-height:1.4; }
 #content img { max-width:100%; height:auto; }
-#content h1, #content h2, #content h3 { font-family:Arial,sans-serif; }
 
-/* ── MENU OVERLAY (shown only when 0 is pressed) ── */
-#menuOverlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 800;
+/* Super tiny progress line */
+#progressBar { position:fixed; bottom:0; left:0; height:3px; background:#4caf50; width:0%; z-index:9999; transition: width 0.2s; }
+
+/* Hidden overlay menu */
+#menuOverlay { 
+    position:fixed; top:0; left:0; width:100%; height:100%; 
+    background:rgba(0,0,0,0.9); color:#fff; z-index:1000; 
+    overflow-y:auto; padding:10px; box-sizing:border-box;
 }
-#menuBox {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  background: #3a2a1e;
-  color: #f2e8d4;
-  font-family: Arial, sans-serif;
-  font-size: 13px;
-  padding: 12px 10px 16px;
-}
-#menuBox .mrow { display:table; width:100%; border-collapse:collapse; margin-bottom:6px; }
-#menuBox .mcell { display:table-cell; padding:8px 4px; text-align:center; vertical-align:middle; border:1px solid #5a4030; font-size:13px; width:25%; }
-#menuBox .mcell a { color:#f2e8d4; text-decoration:none; display:block; }
-#menuBox .mcell.dis { color:#7a6055; }
-#menuBox .keyhint { display:table; width:100%; margin-top:8px; }
-#menuBox .krow { display:table-row; }
-#menuBox .k { display:table-cell; padding:2px 6px; font-size:11px; color:#b0a090; }
-#menuBox .kv { display:table-cell; padding:2px 6px; font-size:11px; color:#d0c0a8; }
+#menuOverlay h2 { font-size:16px; margin-top:0; color:#f2ead9; }
+#menuOverlay p { font-size:12px; color:#bbb; }
+#menuOverlay a { display:block; color:#fff; text-decoration:none; padding:10px 0; border-bottom:1px solid #444; font-family:Arial, sans-serif; font-size:14px; }
 
-/* ── TOC SCREEN ── */
-#tocScreen { display:none; padding:8px; padding-top:8px; }
-#tocScreen h2 { font-size:15px; font-family:Arial,sans-serif; margin:4px 6px 8px; }
-#tocTable { width:100%; border-collapse:collapse; }
-#tocTable td { padding:9px 8px; border-bottom:1px solid #ccc; font-size:16px; }
-#tocTable a { color:#5b4636; text-decoration:none; display:block; }
-#tocBack { display:block; width:100%; padding:12px; background:#5b4636; color:#fff; text-align:center; border:none; font-size:15px; margin-top:10px; }
+#tocScreen { background:#f2f0e8; min-height:100vh; padding:10px; }
+#tocScreen h2 { font-size:16px; font-family:Arial,sans-serif; margin-top:0; }
+#tocScreen a { display:block; padding:12px 0; border-bottom:1px solid #ccc; color:#333; text-decoration:none; font-size:14px; }
 
-/* ── TTS STATUS STRIP ── */
-#ttsStrip {
-  display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: #3a2a1e;
-  color: #f2e8d4;
-  font-family: Arial,sans-serif;
-  font-size: 12px;
-  padding: 5px 10px;
-  text-align: center;
-  z-index: 700;
-}
-
-/* Landscape via JS class toggling */
-body.rot-left  { transform-origin: top left;  transform: rotate(-90deg) translateX(-100%); width:100vh; height:100vw; }
-body.rot-right { transform-origin: top right; transform: rotate(90deg) translateY(-100%);  width:100vh; height:100vw; }
+#loading { padding:20px; font-family:Arial,sans-serif; font-size:14px; text-align:center; }
+#errBox { padding:10px; background:#fdd; color:#800; font-family:Arial,sans-serif; font-size:12px; margin:10px 0; border:1px solid #c88; display:none; }
+.hidden { display:none !important; }
 </style>
 </head>
 <body>
 
-<!-- PICK SCREEN -->
-<div id="screenPick">
-  <h1>EPUB Reader</h1>
-  <p>Open an .epub file to start reading. Runs fully on-device.</p>
-  <div class="keys">
-    <b>Numpad controls:</b><br>
-    2/8 = Scroll up/down &nbsp;|&nbsp; 4 = Prev chapter &nbsp;|&nbsp; 6 = Next chapter<br>
-    5 = Chapters &nbsp;|&nbsp; * = Text − &nbsp;|&nbsp; # = Text +<br>
-    0 = Show/hide menu &nbsp;|&nbsp; Hold 0 = Start/stop TTS<br>
-    1 = Rotate left &nbsp;|&nbsp; 3 = Rotate right<br>
-    7/9 = TTS volume −/+
+<div id="wrapper">
+  <div id="screenPick">
+    <h1>Plain EPUB Reader</h1>
+    <p>Select a book. Press '0' for menu later.</p>
+    <input type="file" id="fileInput" accept=".epub,application/epub+zip">
+    <div id="errBox"></div>
   </div>
-  <input type="file" id="fileInput" accept=".epub,application/epub+zip">
-  <div id="errBox"></div>
-</div>
 
-<!-- LOADING -->
-<div id="loading">Opening book&hellip;</div>
+  <div id="loading" class="hidden">Opening book&hellip;</div>
 
-<!-- READER -->
-<div id="readerScreen">
-  <div id="progressBar"><div id="progressFill"></div></div>
-  <div id="content"></div>
+  <div id="readerScreen" class="hidden">
+    <div id="content"></div>
+  </div>
 
-  <!-- TTS status -->
-  <div id="ttsStrip">🔊 Reading... &nbsp;<span id="ttsVol">Vol: 100%</span> &nbsp; <small>Hold 0 to stop</small></div>
+  <div id="tocScreen" class="hidden">
+    <h2>Chapters (Press 5 to exit)</h2>
+    <div id="tocList"></div>
+  </div>
 
-  <!-- Menu overlay (0 key) -->
-  <div id="menuOverlay">
-    <div id="menuBox">
-      <div class="mrow">
-        <div class="mcell" id="mPrev"><a href="javascript:void(0)" id="mPrevA">&#171; Prev</a></div>
-        <div class="mcell"><a href="javascript:void(0)" id="mToc">Contents</a></div>
-        <div class="mcell" id="mNext"><a href="javascript:void(0)" id="mNextA">Next &#187;</a></div>
-        <div class="mcell"><a href="javascript:void(0)" id="mClose">Close</a></div>
-      </div>
-      <div class="mrow">
-        <div class="mcell"><a href="javascript:void(0)" id="mSmaller">Text A-</a></div>
-        <div class="mcell"><a href="javascript:void(0)" id="mBigger">Text A+</a></div>
-        <div class="mcell"><a href="javascript:void(0)" id="mTts">▶ TTS</a></div>
-        <div class="mcell"><a href="javascript:void(0)" id="mStopTts">■ Stop</a></div>
-      </div>
-      <div class="keyhint">
-        <div class="krow"><span class="k">2/8</span><span class="kv">Scroll</span><span class="k">4/6</span><span class="kv">Prev/Next</span><span class="k">5</span><span class="kv">Chapters</span></div>
-        <div class="krow"><span class="k">* #</span><span class="kv">Text ±</span><span class="k">7/9</span><span class="kv">Vol ±</span><span class="k">1/3</span><span class="kv">Rotate</span></div>
-      </div>
-    </div>
+  <div id="menuOverlay" class="hidden">
+    <h2>Settings Menu</h2>
+    <p>Press 0 to close</p>
+    <a href="javascript:void(0)" onclick="toggleMenu();">Back to Reading</a>
+    <a href="javascript:void(0)" onclick="toggleTOC();">Table of Contents</a>
+    <a href="javascript:void(0)" onclick="startStopTTS();">Start/Stop TTS Audio</a>
+    <a href="javascript:void(0)" onclick="location.reload();">Close Book & Exit</a>
   </div>
 </div>
 
-<!-- TOC SCREEN -->
-<div id="tocScreen">
-  <h2>Table of Contents</h2>
-  <table id="tocTable"></table>
-  <button id="tocBack">&#8592; Back to reading</button>
-</div>
+<div id="progressBar" class="hidden"></div>
 
 <script>
 /* ============================================================
-   DEFLATE / ZIP inflater (ES5, no dependencies)
+   PLAIN ES5 JAVASCRIPT ONLY. 
+   Includes DEFLATE + Numpad Navigation Logic.
    ============================================================ */
+
+/* --- DEFLATE LIBRARY (Unchanged from your snippet) --- */
 var Inflate = (function () {
-  var LBASE=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
-  var LEXT=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
-  var DBASE=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
-  var DEXT=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
-  var CLORDER=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
-  function BitReader(data,pos){this.data=data;this.pos=pos||0;this.bitbuf=0;this.bitcnt=0;}
-  BitReader.prototype.getBit=function(){if(this.bitcnt===0){this.bitbuf=this.data[this.pos++];this.bitcnt=8;}var b=this.bitbuf&1;this.bitbuf>>=1;this.bitcnt--;return b;};
-  BitReader.prototype.getBits=function(n){var v=0;for(var i=0;i<n;i++)v|=this.getBit()<<i;return v;};
-  function buildHuffman(lens){var MB=15,cnt=[],i;for(var z=0;z<=MB;z++)cnt.push(0);for(i=0;i<lens.length;i++)cnt[lens[i]]++;cnt[0]=0;var offs=[];for(z=0;z<=MB;z++)offs.push(0);for(i=1;i<MB;i++)offs[i+1]=offs[i]+cnt[i];var sym=[];for(i=0;i<lens.length;i++)sym.push(0);for(i=0;i<lens.length;i++)if(lens[i]!==0)sym[offs[lens[i]]++]=i;return{counts:cnt,symbols:sym};}
-  function decodeSym(br,tbl){var code=0,first=0,idx=0;for(var len=1;len<=15;len++){code|=br.getBit();var c=tbl.counts[len];if(code-first<c)return tbl.symbols[idx+(code-first)];idx+=c;first+=c;first<<=1;code<<=1;}throw new Error('bad huffman');}
-  function inflateBlock(br,lit,dist,out){for(;;){var s=decodeSym(br,lit);if(s<256){out.push(s);}else if(s===256){return;}else{s-=257;var len=LBASE[s]+br.getBits(LEXT[s]);var ds=decodeSym(br,dist);var d=DBASE[ds]+br.getBits(DEXT[ds]);var st=out.length-d;for(var k=0;k<len;k++)out.push(out[st+k]);}}}
-  var FL,FD;
-  (function(){var l=[],i;for(i=0;i<=143;i++)l.push(8);for(;i<=255;i++)l.push(9);for(;i<=279;i++)l.push(7);for(;i<=287;i++)l.push(8);FL=buildHuffman(l);var d=[];for(i=0;i<30;i++)d.push(5);FD=buildHuffman(d);})();
-  function dynTables(br){var hl=br.getBits(5)+257,hd=br.getBits(5)+1,hc=br.getBits(4)+4,cl=[],z,r;for(z=0;z<19;z++)cl.push(0);for(var i=0;i<hc;i++)cl[CLORDER[i]]=br.getBits(3);var ct=buildHuffman(cl),lens=[];while(lens.length<hl+hd){var s=decodeSym(br,ct);if(s<16){lens.push(s);}else if(s===16){var pv=lens[lens.length-1];r=br.getBits(2)+3;for(var a=0;a<r;a++)lens.push(pv);}else if(s===17){r=br.getBits(3)+3;for(var b=0;b<r;b++)lens.push(0);}else{r=br.getBits(7)+11;for(var c=0;c<r;c++)lens.push(0);}}return{lit:buildHuffman(lens.slice(0,hl)),dist:buildHuffman(lens.slice(hl,hl+hd))};}
-  function inflateRaw(data,pos){var br=new BitReader(data,pos),out=[];for(;;){var f=br.getBit(),t=br.getBits(2);if(t===0){br.bitbuf=0;br.bitcnt=0;var ln=data[br.pos]|(data[br.pos+1]<<8);br.pos+=4;for(var i=0;i<ln;i++)out.push(data[br.pos++]);}else if(t===1){inflateBlock(br,FL,FD,out);}else if(t===2){var tb=dynTables(br);inflateBlock(br,tb.lit,tb.dist,out);}else{throw new Error('bad block');}if(f)break;}return{data:new Uint8Array(out),endPos:br.pos};}
-  return{inflateRaw:inflateRaw};
+  var LBASE = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+  var LEXT  = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+  var DBASE = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+  var DEXT  = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+  var CLORDER = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+
+  function BitReader(data, pos) { this.data = data; this.pos = pos || 0; this.bitbuf = 0; this.bitcnt = 0; }
+  BitReader.prototype.getBit = function () {
+    if (this.bitcnt === 0) { this.bitbuf = this.data[this.pos++]; this.bitcnt = 8; }
+    var bit = this.bitbuf & 1; this.bitbuf >>= 1; this.bitcnt--; return bit;
+  };
+  BitReader.prototype.getBits = function (n) { var v = 0; for (var i = 0; i < n; i++) v |= this.getBit() << i; return v; };
+
+  function buildHuffman(lengths) {
+    var MAXBITS = 15; var counts = [];
+    for (var z = 0; z <= MAXBITS; z++) counts.push(0);
+    for (var i = 0; i < lengths.length; i++) counts[lengths[i]]++;
+    counts[0] = 0; var offs = [];
+    for (z = 0; z <= MAXBITS; z++) offs.push(0);
+    for (i = 1; i < MAXBITS; i++) offs[i + 1] = offs[i] + counts[i];
+    var symbols = [];
+    for (i = 0; i < lengths.length; i++) symbols.push(0);
+    for (i = 0; i < lengths.length; i++) { if (lengths[i] !== 0) symbols[offs[lengths[i]]++] = i; }
+    return { counts: counts, symbols: symbols };
+  }
+
+  function decodeSymbol(br, table) {
+    var code = 0, first = 0, index = 0;
+    for (var len = 1; len <= 15; len++) {
+      code |= br.getBit(); var count = table.counts[len];
+      if (code - first < count) return table.symbols[index + (code - first)];
+      index += count; first += count; first <<= 1; code <<= 1;
+    }
+    throw new Error('bad huffman code');
+  }
+
+  function inflateBlockData(br, litTable, distTable, out) {
+    for (;;) {
+      var sym = decodeSymbol(br, litTable);
+      if (sym < 256) { out.push(sym); } 
+      else if (sym === 256) { return; } 
+      else {
+        sym -= 257; if (sym >= LBASE.length) throw new Error('bad length code');
+        var len = LBASE[sym] + br.getBits(LEXT[sym]);
+        var dsym = decodeSymbol(br, distTable);
+        if (dsym >= DBASE.length) throw new Error('bad dist code');
+        var dist = DBASE[dsym] + br.getBits(DEXT[dsym]);
+        var start = out.length - dist;
+        for (var k = 0; k < len; k++) out.push(out[start + k]);
+      }
+    }
+  }
+
+  var FIXED_LIT, FIXED_DIST;
+  (function () {
+    var lens = []; var i = 0;
+    for (; i <= 143; i++) lens.push(8); for (; i <= 255; i++) lens.push(9);
+    for (; i <= 279; i++) lens.push(7); for (; i <= 287; i++) lens.push(8);
+    FIXED_LIT = buildHuffman(lens);
+    var dlens = []; for (i = 0; i < 30; i++) dlens.push(5);
+    FIXED_DIST = buildHuffman(dlens);
+  })();
+
+  function inflateDynamicTables(br) {
+    var hlit = br.getBits(5) + 257; var hdist = br.getBits(5) + 1; var hclen = br.getBits(4) + 4;
+    var clLens = []; for (var z = 0; z < 19; z++) clLens.push(0);
+    for (var i = 0; i < hclen; i++) clLens[CLORDER[i]] = br.getBits(3);
+    var clTable = buildHuffman(clLens);
+    var lens = [];
+    while (lens.length < hlit + hdist) {
+      var sym = decodeSymbol(br, clTable);
+      if (sym < 16) { lens.push(sym); } 
+      else if (sym === 16) { var prev = lens[lens.length - 1]; var rep = br.getBits(2) + 3; for (var r = 0; r < rep; r++) lens.push(prev); } 
+      else if (sym === 17) { var rep2 = br.getBits(3) + 3; for (var r2 = 0; r2 < rep2; r2++) lens.push(0); } 
+      else if (sym === 18) { var rep3 = br.getBits(7) + 11; for (var r3 = 0; r3 < rep3; r3++) lens.push(0); }
+    }
+    return { lit: buildHuffman(lens.slice(0, hlit)), dist: buildHuffman(lens.slice(hlit, hlit + hdist)) };
+  }
+
+  function inflateRaw(data, pos) {
+    var br = new BitReader(data, pos); var out = [];
+    for (;;) {
+      var final = br.getBit(); var type = br.getBits(2);
+      if (type === 0) {
+        br.bitbuf = 0; br.bitcnt = 0;
+        var len = data[br.pos] | (data[br.pos + 1] << 8); br.pos += 4;
+        for (var i = 0; i < len; i++) out.push(data[br.pos++]);
+      } else if (type === 1) { inflateBlockData(br, FIXED_LIT, FIXED_DIST, out); } 
+      else if (type === 2) { var tabs = inflateDynamicTables(br); inflateBlockData(br, tabs.lit, tabs.dist, out); } 
+      else { throw new Error('bad block type'); }
+      if (final) break;
+    }
+    return { data: new Uint8Array(out), endPos: br.pos };
+  }
+  return { inflateRaw: inflateRaw };
 })();
 
-function utf8Decode(b){var o='',i=0;while(i<b.length){var c=b[i++];if(c<0x80){o+=String.fromCharCode(c);}else if(c<0xE0){o+=String.fromCharCode(((c&0x1F)<<6)|(b[i++]&0x3F));}else if(c<0xF0){var c2=b[i++],c3=b[i++];o+=String.fromCharCode(((c&0x0F)<<12)|((c2&0x3F)<<6)|(c3&0x3F));}else{var a=b[i++],a2=b[i++],a3=b[i++];var cp=((c&7)<<18)|((a&0x3F)<<12)|((a2&0x3F)<<6)|(a3&0x3F);cp-=0x10000;o+=String.fromCharCode(0xD800+(cp>>10),0xDC00+(cp&0x3FF));}}return o;}
-
-function readZipEntries(buf){
-  var view=new DataView(buf),u8=new Uint8Array(buf),i=u8.length-22,eocd=-1;
-  var min=Math.max(0,u8.length-65557);
-  for(;i>=min;i--){if(view.getUint32(i,true)===0x06054b50){eocd=i;break;}}
-  if(eocd===-1)throw new Error('Not a valid EPUB/ZIP.');
-  var cnt=view.getUint16(eocd+10,true),cdOff=view.getUint32(eocd+16,true),entries=[],p=cdOff;
-  for(var e=0;e<cnt;e++){
-    if(view.getUint32(p,true)!==0x02014b50)throw new Error('Corrupt ZIP.');
-    var cm=view.getUint16(p+10,true),cs=view.getUint32(p+20,true),us=view.getUint32(p+24,true),nl=view.getUint16(p+28,true),xl=view.getUint16(p+30,true),cl2=view.getUint16(p+32,true),lo=view.getUint32(p+42,true);
-    var nm=utf8Decode(u8.subarray(p+46,p+46+nl));
-    entries.push({name:nm,compMethod:cm,compSize:cs,uncompSize:us,localOffset:lo});
-    p+=46+nl+xl+cl2;
+function utf8Decode(bytes) {
+  var out = ''; var i = 0;
+  while (i < bytes.length) {
+    var c = bytes[i++];
+    if (c < 0x80) { out += String.fromCharCode(c); } 
+    else if (c < 0xE0) { out += String.fromCharCode(((c & 0x1F) << 6) | (bytes[i++] & 0x3F)); } 
+    else if (c < 0xF0) { out += String.fromCharCode(((c & 0x0F) << 12) | ((bytes[i++] & 0x3F) << 6) | (bytes[i++] & 0x3F)); } 
+    else {
+      var cp = ((c & 0x07) << 18) | ((bytes[i++] & 0x3F) << 12) | ((bytes[i++] & 0x3F) << 6) | (bytes[i++] & 0x3F);
+      cp -= 0x10000; out += String.fromCharCode(0xD800 + (cp >> 10), 0xDC00 + (cp & 0x3FF));
+    }
   }
-  var cache={};
-  function getFile(name){
-    if(Object.prototype.hasOwnProperty.call(cache,name))return cache[name];
-    var ent=null;for(var k=0;k<entries.length;k++)if(entries[k].name===name){ent=entries[k];break;}
-    if(!ent)return null;
-    var lp=ent.localOffset,nL=view.getUint16(lp+26,true),eL=view.getUint16(lp+28,true),ds=lp+30+nL+eL,raw;
-    if(ent.compMethod===0){raw=u8.subarray(ds,ds+ent.uncompSize);}
-    else if(ent.compMethod===8){raw=Inflate.inflateRaw(u8,ds).data;}
-    else throw new Error('Unsupported compression: '+name);
-    cache[name]=raw;return raw;
+  return out;
+}
+
+function readZipEntries(buf) {
+  var view = new DataView(buf); var u8 = new Uint8Array(buf);
+  var i = u8.length - 22; var eocd = -1; var minSearch = Math.max(0, u8.length - 65557);
+  for (; i >= minSearch; i--) { if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; } }
+  if (eocd === -1) throw new Error('Not a valid EPUB (zip).');
+  var entryCount = view.getUint16(eocd + 10, true);
+  var cdOffset = view.getUint32(eocd + 16, true);
+  var entries = []; var p = cdOffset;
+  for (var e = 0; e < entryCount; e++) {
+    var compMethod = view.getUint16(p + 10, true);
+    var uncompSize = view.getUint32(p + 24, true);
+    var nameLen = view.getUint16(p + 28, true);
+    entries.push({
+      name: utf8Decode(u8.subarray(p + 46, p + 46 + nameLen)),
+      compMethod: compMethod, uncompSize: uncompSize, localOffset: view.getUint32(p + 42, true)
+    });
+    p += 46 + nameLen + view.getUint16(p + 30, true) + view.getUint16(p + 32, true);
   }
-  return{entries:entries,getFile:getFile};
-}
-
-/* ── Path helpers ── */
-function dirName(p){var i=p.lastIndexOf('/');return i===-1?'':p.substring(0,i);}
-function resolvePath(base,rel){
-  if(!rel)return rel;
-  if(/^https?:\/\//i.test(rel)||rel.indexOf('data:')===0)return rel;
-  rel=rel.split('#')[0];
-  var parts=base?base.split('/'):[],cp=[],rp=rel.split('/');
-  for(var j=0;j<parts.length;j++)if(parts[j]!=='')cp.push(parts[j]);
-  for(var i=0;i<rp.length;i++){if(rp[i]==='.'||rp[i]==='')continue;if(rp[i]==='..')cp.pop();else cp.push(rp[i]);}
-  return cp.join('/');
-}
-function bytesToB64(b){var ch='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',o='',l=b.length;for(var i=0;i<l;i+=3){var b1=b[i],b2=i+1<l?b[i+1]:0,b3=i+2<l?b[i+2]:0;o+=ch.charAt(b1>>2);o+=ch.charAt(((b1&3)<<4)|(b2>>4));o+=(i+1<l)?ch.charAt(((b2&15)<<2)|(b3>>6)):'=';o+=(i+2<l)?ch.charAt(b3&63):'=';}return o;}
-function ext2mime(n){var e=n.split('.').pop().toLowerCase();return{jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',svg:'image/svg+xml',webp:'image/webp',bmp:'image/bmp'}[e]||'application/octet-stream';}
-function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function parseXML(t){return(new DOMParser()).parseFromString(t,'text/xml');}
-
-/* ── Book model ── */
-var Book={zip:null,opfDir:'',title:'',spine:[],toc:[],currentIndex:0,storageKey:null};
-
-function openEpub(buf,label){
-  var zip=readZipEntries(buf);
-  var cx=zip.getFile('META-INF/container.xml');
-  if(!cx)throw new Error('Missing container.xml');
-  var cd=parseXML(utf8Decode(cx)),rf=cd.getElementsByTagName('rootfile')[0];
-  if(!rf)throw new Error('No rootfile found');
-  var opfPath=rf.getAttribute('full-path'),opfDir=dirName(opfPath);
-  var opfB=zip.getFile(opfPath);
-  if(!opfB)throw new Error('Cannot read OPF');
-  var opf=parseXML(utf8Decode(opfB));
-  var tEl=opf.getElementsByTagName('dc:title')[0]||opf.getElementsByTagName('title')[0];
-  var title=tEl?tEl.textContent:label;
-  var mById={},mItems=opf.getElementsByTagName('item');
-  for(var i=0;i<mItems.length;i++){var it=mItems[i];mById[it.getAttribute('id')]=resolvePath(opfDir,it.getAttribute('href'));}
-  var spine=[],refs=opf.getElementsByTagName('itemref');
-  for(i=0;i<refs.length;i++){var id=refs[i].getAttribute('idref');if(mById[id])spine.push({id:id,href:mById[id]});}
-  if(!spine.length)throw new Error('No spine items');
-  var toc=[],spEl=opf.getElementsByTagName('spine')[0],ncxId=spEl?spEl.getAttribute('toc'):null;
-  var ncxHref=ncxId?mById[ncxId]:null;
-  if(!ncxHref){for(var mid in mById)if(mid&&mById[mid]&&mById[mid].toLowerCase().indexOf('.ncx')!==-1){ncxHref=mById[mid];break;}}
-  if(ncxHref&&zip.getFile(ncxHref)){
-    try{var nd=parseXML(utf8Decode(zip.getFile(ncxHref))),nps=nd.getElementsByTagName('navPoint'),ncxDir=dirName(ncxHref);
-    for(i=0;i<nps.length;i++){var nl=nps[i].getElementsByTagName('text')[0],co=nps[i].getElementsByTagName('content')[0];if(co){var src=co.getAttribute('src'),res=resolvePath(ncxDir,src).split('#')[0];toc.push({href:res,label:nl?nl.textContent:res});}}}catch(e){}
+  var filesByName = {};
+  function getFile(name) {
+    if (Object.prototype.hasOwnProperty.call(filesByName, name)) return filesByName[name];
+    var entry = null;
+    for (var k = 0; k < entries.length; k++) { if (entries[k].name === name) { entry = entries[k]; break; } }
+    if (!entry) return null;
+    var lp = entry.localOffset;
+    var dataStart = lp + 30 + view.getUint16(lp + 26, true) + view.getUint16(lp + 28, true);
+    var raw;
+    if (entry.compMethod === 0) { raw = u8.subarray(dataStart, dataStart + entry.uncompSize); } 
+    else if (entry.compMethod === 8) { raw = Inflate.inflateRaw(u8, dataStart).data; } 
+    else { throw new Error('Unsupported compression'); }
+    filesByName[name] = raw; return raw;
   }
-  if(!toc.length)for(i=0;i<spine.length;i++)toc.push({href:spine[i].href,label:'Chapter '+(i+1)});
-  Book.zip=zip;Book.opfDir=opfDir;Book.title=title;Book.spine=spine;Book.toc=toc;Book.currentIndex=0;
-  Book.storageKey='epubprog:'+title;
-  try{var sv=window.localStorage.getItem(Book.storageKey);if(sv!==null){var idx=parseInt(sv,10);if(!isNaN(idx)&&idx>=0&&idx<spine.length)Book.currentIndex=idx;}}catch(e){}
-}
-function saveProgress(){try{if(Book.storageKey)window.localStorage.setItem(Book.storageKey,String(Book.currentIndex));}catch(e){}}
-function saveFontSize(){try{window.localStorage.setItem('epubFont',String(currentFontSize));}catch(e){}}
-
-/* ── Chapter rendering ── */
-function renderChapter(index){
-  if(index<0||index>=Book.spine.length)return;
-  Book.currentIndex=index;saveProgress();
-  var item=Book.spine[index],raw=Book.zip.getFile(item.href);
-  if(!raw){document.getElementById('content').innerHTML='<p><em>Could not load chapter.</em></p>';return;}
-  var text=utf8Decode(raw),chDir=dirName(item.href),doc;
-  try{doc=parseXML(text);if(doc.getElementsByTagName('parsererror').length>0)throw 0;}
-  catch(e){doc=document.implementation.createHTMLDocument('');doc.documentElement.innerHTML=text;}
-  var sc=doc.getElementsByTagName('script');for(var s=sc.length-1;s>=0;s--)sc[s].parentNode.removeChild(sc[s]);
-  var cssText='',links=doc.getElementsByTagName('link');
-  for(var L=0;L<links.length;L++){if((links[L].getAttribute('rel')||'').toLowerCase().indexOf('stylesheet')!==-1){var h=links[L].getAttribute('href');if(h){var cp=resolvePath(chDir,h),cb=Book.zip.getFile(cp);if(cb)cssText+=utf8Decode(cb)+'\n';}}}
-  var body=doc.getElementsByTagName('body')[0]||doc.documentElement;
-  var imgs=body.getElementsByTagName('img');
-  for(var m=0;m<imgs.length;m++){var src=imgs[m].getAttribute('src');if(src&&src.indexOf('data:')!==0){var ip=resolvePath(chDir,src),ib=Book.zip.getFile(ip);if(ib)imgs[m].setAttribute('src','data:'+ext2mime(ip)+';base64,'+bytesToB64(ib));}}
-  var svi=body.getElementsByTagName('image');
-  for(var n=0;n<svi.length;n++){var xr=svi[n].getAttribute('xlink:href')||svi[n].getAttribute('href');if(xr&&xr.indexOf('data:')!==0){var sp=resolvePath(chDir,xr),sb=Book.zip.getFile(sp);if(sb)svi[n].setAttribute('xlink:href','data:'+ext2mime(sp)+';base64,'+bytesToB64(sb));}}
-  var cEl=document.getElementById('content');
-  cEl.innerHTML=(cssText?'<style>'+cssText+'</style>':'')+body.innerHTML;
-  cEl.style.fontSize=currentFontSize+'px';
-  updateProgress();
-  window.scrollTo(0,0);
+  return { entries: entries, getFile: getFile };
 }
 
-function updateProgress(){
-  var pct=Book.spine.length>1?Math.round((Book.currentIndex/(Book.spine.length-1))*100):100;
-  document.getElementById('progressFill').style.width=pct+'%';
-}
-
-/* ── Screen management ── */
-function showScreen(name){
-  document.getElementById('screenPick').style.display=name==='pick'?'':'none';
-  document.getElementById('loading').style.display=name==='loading'?'':'none';
-  document.getElementById('readerScreen').style.display=name==='reader'?'':'none';
-  document.getElementById('tocScreen').style.display=name==='toc'?'':'none';
-  if(name!=='reader')hideMenu();
-}
-
-/* ── Menu (0 key) ── */
-var menuVisible=false;
-function showMenu(){menuVisible=true;document.getElementById('menuOverlay').style.display='block';}
-function hideMenu(){menuVisible=false;document.getElementById('menuOverlay').style.display='none';}
-function toggleMenu(){if(menuVisible)hideMenu();else showMenu();}
-
-/* ── Font size ── */
-var currentFontSize=19;
-try{var sf=window.localStorage.getItem('epubFont');if(sf)currentFontSize=parseInt(sf,10);}catch(e){}
-function setFontSize(sz){
-  if(sz<11)sz=11;if(sz>36)sz=36;
-  currentFontSize=sz;saveFontSize();
-  document.getElementById('content').style.fontSize=sz+'px';
-}
-
-/* ── Navigation ── */
-function goPrev(){if(Book.currentIndex>0){renderChapter(Book.currentIndex-1);hideMenu();}}
-function goNext(){if(Book.currentIndex<Book.spine.length-1){renderChapter(Book.currentIndex+1);hideMenu();}}
-
-/* ── TOC ── */
-function buildTocScreen(){
-  var t=document.getElementById('tocTable'),html='';
-  for(var i=0;i<Book.toc.length;i++)html+='<tr><td><a href="javascript:void(0)" data-href="'+escHtml(Book.toc[i].href)+'">'+escHtml(Book.toc[i].label)+'</a></td></tr>';
-  t.innerHTML=html;
-  var links=t.getElementsByTagName('a');
-  for(var j=0;j<links.length;j++){
-    links[j].onclick=(function(href){return function(){
-      var idx=0;for(var k=0;k<Book.spine.length;k++)if(Book.spine[k].href===href){idx=k;break;}
-      renderChapter(idx);showScreen('reader');
-    };})(links[j].getAttribute('data-href'));
+function dirName(path) { var idx = path.lastIndexOf('/'); return idx === -1 ? '' : path.substring(0, idx); }
+function resolvePath(baseDir, rel) {
+  if (!rel || /^https?:\/\//i.test(rel) || rel.indexOf('data:') === 0) return rel;
+  var parts = (baseDir ? baseDir.split('/') : []), clean = [], relParts = rel.split('#')[0].split('/');
+  for (var j = 0; j < parts.length; j++) if (parts[j] !== '') clean.push(parts[j]);
+  for (var i = 0; i < relParts.length; i++) {
+    if (relParts[i] === '.' || relParts[i] === '') continue;
+    if (relParts[i] === '..') clean.pop(); else clean.push(relParts[i]);
   }
+  return clean.join('/');
 }
 
-/* ── TTS ── */
-var ttsActive=false,ttsVol=1.0,ttsUtt=null;
-function startTTS(){
-  if(!window.speechSynthesis){alert('TTS not supported in this browser.');return;}
-  stopTTS();
-  var cEl=document.getElementById('content');
-  var text=cEl.innerText||cEl.textContent||'';
-  text=text.replace(/\s+/g,' ').trim();
-  if(!text){return;}
-  ttsUtt=new SpeechSynthesisUtterance(text);
-  ttsUtt.volume=ttsVol;
-  ttsUtt.rate=0.95;
-  ttsUtt.lang='en';
-  ttsUtt.onend=function(){ttsActive=false;document.getElementById('ttsStrip').style.display='none';};
-  ttsUtt.onerror=function(){ttsActive=false;document.getElementById('ttsStrip').style.display='none';};
-  window.speechSynthesis.speak(ttsUtt);
-  ttsActive=true;
-  document.getElementById('ttsStrip').style.display='block';
-  document.getElementById('ttsVol').textContent='Vol: '+Math.round(ttsVol*100)+'%';
-  hideMenu();
-}
-function stopTTS(){
-  if(window.speechSynthesis)window.speechSynthesis.cancel();
-  ttsActive=false;ttsUtt=null;
-  document.getElementById('ttsStrip').style.display='none';
-}
-function toggleTTS(){if(ttsActive)stopTTS();else startTTS();}
-function ttsVolChange(delta){
-  ttsVol=Math.max(0,Math.min(1,ttsVol+delta));
-  if(ttsUtt&&ttsActive){stopTTS();startTTS();}
-  document.getElementById('ttsVol').textContent='Vol: '+Math.round(ttsVol*100)+'%';
-}
+/* --- EPUB PARSER & RENDERER --- */
+var Book = { zip: null, spine: [], toc: [], currentIndex: 0, storageKey: null };
 
-/* ── Scroll ── */
-function scrollBy(px){window.scrollBy(0,px);}
+function parseXML(text) { return new DOMParser().parseFromString(text, 'text/xml'); }
 
-/* ── Rotation ── */
-// States: 0=normal, 1=left(-90), 2=right(+90)
-var rotState=0;
-function rotateLeft(){
-  if(rotState===1){rotState=0;document.body.className=document.body.className.replace(/rot-left|rot-right/g,'').trim();}
-  else{rotState=1;document.body.className=(document.body.className.replace(/rot-left|rot-right/g,'').trim()+' rot-left').trim();}
-}
-function rotateRight(){
-  if(rotState===2){rotState=0;document.body.className=document.body.className.replace(/rot-left|rot-right/g,'').trim();}
-  else{rotState=2;document.body.className=(document.body.className.replace(/rot-left|rot-right/g,'').trim()+' rot-right').trim();}
-}
+function openEpub(arrayBuffer, fileLabel) {
+  var zip = readZipEntries(arrayBuffer);
+  var containerDoc = parseXML(utf8Decode(zip.getFile('META-INF/container.xml')));
+  var opfPath = containerDoc.getElementsByTagName('rootfile')[0].getAttribute('full-path');
+  var opfDir = dirName(opfPath);
+  var opfDoc = parseXML(utf8Decode(zip.getFile(opfPath)));
 
-/* ── Long-press detection for key 0 ── */
-var key0Timer=null,key0Long=false;
-var LONG_PRESS_MS=700;
+  var titleEl = opfDoc.getElementsByTagName('dc:title')[0] || opfDoc.getElementsByTagName('title')[0];
+  var title = titleEl ? titleEl.textContent : fileLabel;
 
-/* ── Keydown handler ── */
-document.addEventListener('keydown',function(e){
-  var k=e.key||'';
-  // Only intercept numpad / number keys in reader
-  var inReader=(document.getElementById('readerScreen').style.display!=='none');
-  var inToc=(document.getElementById('tocScreen').style.display!=='none');
-
-  if(inToc){
-    if(k==='5'||k==='Escape'){showScreen('reader');e.preventDefault();}
-    return;
-  }
-  if(!inReader)return;
-
-  // Key 0: start long-press timer
-  if(k==='0'){
-    key0Long=false;
-    key0Timer=setTimeout(function(){key0Long=true;toggleTTS();},LONG_PRESS_MS);
-    e.preventDefault();return;
+  var manifestById = {};
+  var manifestItems = opfDoc.getElementsByTagName('item');
+  for (var i = 0; i < manifestItems.length; i++) {
+    manifestById[manifestItems[i].getAttribute('id')] = resolvePath(opfDir, manifestItems[i].getAttribute('href'));
   }
 
-  switch(k){
-    case '2': scrollBy(-120);e.preventDefault();break;
-    case '8': scrollBy(120);e.preventDefault();break;
-    case '4': goPrev();e.preventDefault();break;
-    case '6': goNext();e.preventDefault();break;
-    case '5': buildTocScreen();showScreen('toc');e.preventDefault();break;
-    case '*': setFontSize(currentFontSize-2);e.preventDefault();break;
-    case '#': setFontSize(currentFontSize+2);e.preventDefault();break;
-    case '1': rotateLeft();e.preventDefault();break;
-    case '3': rotateRight();e.preventDefault();break;
-    case '7': ttsVolChange(-0.1);e.preventDefault();break;
-    case '9': ttsVolChange(0.1);e.preventDefault();break;
-    default: break;
+  var spine = [];
+  var itemrefs = opfDoc.getElementsByTagName('itemref');
+  for (i = 0; i < itemrefs.length; i++) {
+    var idref = itemrefs[i].getAttribute('idref');
+    if (manifestById[idref]) spine.push({ id: idref, href: manifestById[idref] });
   }
-});
 
-document.addEventListener('keyup',function(e){
-  if(e.key==='0'){
-    clearTimeout(key0Timer);
-    if(!key0Long){toggleMenu();}
-    key0Timer=null;key0Long=false;
-    e.preventDefault();
+  // Fallback TOC generation
+  var toc = [];
+  for (i = 0; i < spine.length; i++) { toc.push({ href: spine[i].href, label: 'Chapter ' + (i + 1) }); }
+
+  Book.zip = zip; Book.spine = spine; Book.toc = toc; Book.currentIndex = 0;
+  Book.storageKey = 'epubprogress:' + title;
+
+  try {
+    var saved = window.localStorage.getItem(Book.storageKey);
+    if (saved !== null) Book.currentIndex = parseInt(saved, 10) || 0;
+  } catch (e) {}
+}
+
+function saveProgress() {
+  try { if (Book.storageKey) window.localStorage.setItem(Book.storageKey, String(Book.currentIndex)); } catch (e) {}
+}
+
+function renderChapter(index) {
+  if (index < 0 || index >= Book.spine.length) return;
+  Book.currentIndex = index; saveProgress();
+  
+  // Stop reading current chapter aloud if changing chapters
+  if (isTTSPlaying) { startStopTTS(); }
+
+  var raw = Book.zip.getFile(Book.spine[index].href);
+  if (!raw) { document.getElementById('content').innerHTML = '<p>Error loading</p>'; return; }
+  
+  var text = utf8Decode(raw);
+  var doc;
+  try {
+    doc = parseXML(text);
+    if (doc.getElementsByTagName('parsererror').length > 0) throw new Error('err');
+  } catch(e) {
+    doc = document.implementation.createHTMLDocument('');
+    doc.documentElement.innerHTML = text;
   }
-});
 
-/* ── UI wiring ── */
-document.getElementById('mPrevA').onclick=goPrev;
-document.getElementById('mNextA').onclick=goNext;
-document.getElementById('mToc').onclick=function(){buildTocScreen();showScreen('toc');};
-document.getElementById('mClose').onclick=function(){stopTTS();showScreen('pick');document.getElementById('fileInput').value='';};
-document.getElementById('mSmaller').onclick=function(){setFontSize(currentFontSize-2);};
-document.getElementById('mBigger').onclick=function(){setFontSize(currentFontSize+2);};
-document.getElementById('mTts').onclick=startTTS;
-document.getElementById('mStopTts').onclick=stopTTS;
-document.getElementById('menuOverlay').onclick=function(e){if(e.target===this)hideMenu();};
-document.getElementById('tocBack').onclick=function(){showScreen('reader');};
+  var scripts = doc.getElementsByTagName('script');
+  for (var s = scripts.length - 1; s >= 0; s--) scripts[s].parentNode.removeChild(scripts[s]);
 
-/* ── File input ── */
-document.getElementById('fileInput').onchange=function(ev){
-  var file=ev.target.files&&ev.target.files[0];
-  if(!file)return;
-  document.getElementById('errBox').style.display='none';
-  showScreen('loading');
-  var fr=new FileReader();
-  fr.onload=function(e){
-    try{
-      openEpub(e.target.result,file.name.replace(/\.epub$/i,''));
+  // COMPLETEING THE CUT-OFF SNIPPET:
+  var bodyEl = doc.getElementsByTagName('body')[0];
+  if (!bodyEl) bodyEl = doc.documentElement;
+  
+  document.getElementById('content').innerHTML = bodyEl.innerHTML;
+  
+  // Update super tiny progress bar
+  var pct = ((index + 1) / Book.spine.length) * 100;
+  var pb = document.getElementById('progressBar');
+  pb.style.width = pct + '%';
+  pb.className = ''; // Make it visible once a book opens
+
+  window.scrollTo(0, 0);
+  document.getElementById('wrapper').scrollTop = 0; // For rotated scrolling
+}
+
+/* --- HARDWARE KEY & DEVICE LOGIC --- */
+var currentFontSize = 16;
+var isMenuVisible = false;
+var isTOCVisible = false;
+
+// Long Press Logic Variables
+var key0Timer = null;
+var key0Pressed = false;
+
+// TTS Logic
+var ttsVolume = 1.0;
+var isTTSPlaying = false;
+var utterance = null;
+
+// Rotation Logic
+var rotState = 0; // 0=normal, 1=left, 2=right
+
+// DOM Interactions
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('screenPick').className = 'hidden';
+  document.getElementById('loading').className = '';
+  var reader = new FileReader();
+  reader.onload = function(re) {
+    try {
+      openEpub(re.target.result, file.name);
+      
+      // Build basic TOC screen
+      var tocHtml = '';
+      for(var i=0; i<Book.spine.length; i++) {
+        tocHtml += '<a href="javascript:void(0)" onclick="renderChapter('+i+'); toggleTOC();">' + Book.toc[i].label + '</a>';
+      }
+      document.getElementById('tocList').innerHTML = tocHtml;
+
       renderChapter(Book.currentIndex);
-      showScreen('reader');
-    }catch(err){
-      var eb=document.getElementById('errBox');
-      eb.innerHTML='Could not open: '+escHtml(err.message||String(err));
-      eb.style.display='block';
-      showScreen('pick');
+      document.getElementById('loading').className = 'hidden';
+      document.getElementById('readerScreen').className = '';
+    } catch(err) {
+      document.getElementById('loading').className = 'hidden';
+      var errBox = document.getElementById('errBox');
+      errBox.innerText = err.toString();
+      errBox.style.display = 'block';
+      document.getElementById('screenPick').className = '';
     }
   };
-  fr.onerror=function(){
-    var eb=document.getElementById('errBox');eb.innerHTML='Could not read file.';eb.style.display='block';showScreen('pick');
-  };
-  fr.readAsArrayBuffer(file);
-};
+  reader.readAsArrayBuffer(file);
+});
 
-/* Initial state */
-showScreen('pick');
+// Key bindings mapped precisely to your requirements
+window.addEventListener('keydown', function(e) {
+  // Only process standard navigation if we are actively reading
+  var bookLoaded = (Book.zip !== null);
+  var key = e.key || String.fromCharCode(e.keyCode);
+  
+  if (key === '0' || key === 'Unidentified') { 
+    // Fallback 'Unidentified' catches some feature phone weirdness occasionally
+    if (!key0Pressed) {
+      key0Pressed = true;
+      key0Timer = setTimeout(function() {
+        startStopTTS();
+        key0Pressed = false; // Prevents the keyup from triggering the menu
+      }, 600); // 600ms = long press
+    }
+    return;
+  }
+
+  if (!bookLoaded) return;
+
+  switch(key) {
+    case '2': case 'ArrowUp': // Num 2: Scroll Up
+      doScroll(-60);
+      break;
+    case '8': case 'ArrowDown': // Num 8: Scroll Down OR TTS Vol Down
+      if (isTTSPlaying) { adjustTTSVol(-0.2); } 
+      else { doScroll(60); }
+      break;
+    case '4': case 'ArrowLeft': // Num 4: Prev Page (Chapter)
+      renderChapter(Book.currentIndex - 1);
+      break;
+    case '6': case 'ArrowRight': // Num 6: Next Page (Chapter)
+      renderChapter(Book.currentIndex + 1);
+      break;
+    case '5': case 'Enter': // Num 5: Chapters
+      toggleTOC();
+      break;
+    case '*': // Smaller Text
+      adjustFont(-2);
+      break;
+    case '#': // Bigger Text
+      adjustFont(2);
+      break;
+    case '1': // Rotate Left
+      toggleRotation(1);
+      break;
+    case '3': // Rotate Right
+      toggleRotation(3);
+      break;
+    case '9': // TTS Vol Up
+      if (isTTSPlaying) adjustTTSVol(0.2);
+      break;
+  }
+});
+
+window.addEventListener('keyup', function(e) {
+  var key = e.key || String.fromCharCode(e.keyCode);
+  if (key === '0') {
+    if (key0Pressed) {
+      clearTimeout(key0Timer);
+      key0Pressed = false;
+      toggleMenu(); // It was a short press
+    }
+  }
+});
+
+// Helpers
+function doScroll(amount) {
+  if (rotState === 0) {
+    window.scrollBy(0, amount);
+  } else {
+    // When rotated via CSS, the window scrolling gets overridden by the wrapper div
+    document.getElementById('wrapper').scrollTop += amount;
+  }
+}
+
+function adjustFont(delta) {
+  currentFontSize += delta;
+  if (currentFontSize < 10) currentFontSize = 10;
+  if (currentFontSize > 36) currentFontSize = 36;
+  document.getElementById('content').style.fontSize = currentFontSize + 'px';
+}
+
+function toggleMenu() {
+  if (isTOCVisible) return; // Prevent overlay issues
+  var m = document.getElementById('menuOverlay');
+  isMenuVisible = !isMenuVisible;
+  m.className = isMenuVisible ? '' : 'hidden';
+}
+
+function toggleTOC() {
+  var t = document.getElementById('tocScreen');
+  var r = document.getElementById('readerScreen');
+  isTOCVisible = !isTOCVisible;
+  if (isTOCVisible) {
+    t.className = '';
+    r.className = 'hidden';
+    document.getElementById('menuOverlay').className = 'hidden';
+    isMenuVisible = false;
+  } else {
+    t.className = 'hidden';
+    r.className = '';
+  }
+}
+
+function toggleRotation(dir) {
+  var wrap = document.getElementById('wrapper');
+  var b = document.body;
+  if (dir === 1) { // Left
+    if (rotState === 1) { wrap.className = ''; b.className = ''; rotState = 0; } 
+    else { wrap.className = 'rotate-left'; b.className = 'rot-locked'; rotState = 1; }
+  } else if (dir === 3) { // Right
+    if (rotState === 2) { wrap.className = ''; b.className = ''; rotState = 0; } 
+    else { wrap.className = 'rotate-right'; b.className = 'rot-locked'; rotState = 2; }
+  }
+}
+
+function startStopTTS() {
+  if (!window.speechSynthesis) return;
+  
+  if (isTTSPlaying || window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    isTTSPlaying = false;
+  } else {
+    var text = document.getElementById('content').innerText;
+    if (!text || text.trim() === '') return;
+    
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.volume = ttsVolume;
+    utterance.onend = function() { isTTSPlaying = false; };
+    
+    window.speechSynthesis.speak(utterance);
+    isTTSPlaying = true;
+  }
+  
+  // Close menu if starting TTS from overlay
+  if (isMenuVisible) toggleMenu();
+}
+
+function adjustTTSVol(amount) {
+  ttsVolume += amount;
+  if (ttsVolume < 0) ttsVolume = 0;
+  if (ttsVolume > 1) ttsVolume = 1;
+  // Live volume adjustments require restarting the utterance or are natively applied depending on the browser engine.
+  // We attach it to the current object on a best-effort basis for mobile browser compliance.
+  if (utterance) utterance.volume = ttsVolume;
+}
 </script>
 </body>
 </html>
