@@ -35,6 +35,12 @@ body.theme-sepia {
     --border-color: #3a2e22;
 }
 
+body.theme-sepia-dark {
+    --bg-color: #25211d;
+    --fg-color: #e4d3b6;
+    --border-color: #584a3e;
+}
+
 /* --- GLOBAL STYLES (Modern, Thin, Professional) --- */
 html, body { 
     margin:0; padding:0; width:100%; height:100%; overflow:hidden; 
@@ -253,6 +259,7 @@ input[type=file] { display:none; }
   <div class="menu-header">Theme</div>
   <a href="#" class="menu-item" onclick="setTheme('light'); return false;">Light</a>
   <a href="#" class="menu-item" onclick="setTheme('sepia'); return false;">Sepia</a>
+<a href="#" class="menu-item" onclick="setTheme('sepia-dark'); return false;">Sepia Dark</a>
   <a href="#" class="menu-item" onclick="setTheme('dark'); return false;">Dark</a>
   
   <div class="menu-header">Typography</div>
