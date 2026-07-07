@@ -9,8 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&family=Merriweather:wght@400;700&family=Noto+Serif+Bengali:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
-/* --- GLOBAL STYLES & THEMING --- */
-html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; transition: background 0.2s, color 0.2s; }
+/* --- GLOBAL STYLES & THEMING (No Animations) --- */
+html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
 
 body.theme-light { background:#f9f9f9; color:#1a1a1a; }
 body.theme-sepia { background:#f4ecd8; color:#3a2e22; }
@@ -54,7 +54,6 @@ input[type=file] { display:none; }
     overflow: hidden; 
     position: absolute; top: 0; left: 0;
     box-sizing: border-box;
-    transition: transform 0.3s;
 }
 
 #wrapper.rotate-left { width: 100vh; height: 100vw; top: 100vh; left: 0; transform-origin: 0 0; transform: rotate(-90deg); }
@@ -62,6 +61,7 @@ input[type=file] { display:none; }
 
 #readerScreen { width:100%; height:100%; overflow:hidden; position:relative; }
 
+/* FIX 1: Text alignment set to left to prevent ugly breaks, word-wrap handled */
 #content { 
     height: calc(100% - 20px); 
     margin: 10px;
@@ -70,14 +70,14 @@ input[type=file] { display:none; }
     column-gap: 20px; 
     column-fill: auto;
     word-wrap: break-word;
-    text-align: justify;
+    overflow-wrap: break-word;
+    text-align: left; /* Justify causes bad breaks on narrow feature phones */
     font-size: 18px;
-    line-height: 1.6;
-    transition: transform 0.25s ease-out;
+    line-height: 1.5;
 }
 #content img { max-width:100%; height:auto; max-height:calc(100vh - 40px); object-fit:contain; display:block; margin: 5px auto; }
 
-#progressBar { position:fixed; bottom:0; left:0; height:4px; background:#0056b3; width:0%; z-index:999; transition:width 0.3s; }
+#progressBar { position:fixed; bottom:0; left:0; height:4px; background:#0056b3; width:0%; z-index:999; }
 body.theme-dark #progressBar { background:#4da3ff; }
 
 /* --- MENUS --- */
@@ -152,20 +152,18 @@ var WEB_CATALOG = [
 
 <div id="menuOverlay" class="hidden">
   <div class="menu-header">Menu Options</div>
-  <a href="#" class="menu-item" id="menuFirstItem" onclick="toggleMenu();">Resume Reading (5)</a>
+  <a href="#" class="menu-item" id="menuFirstItem" onclick="toggleMenu();">Resume Reading (0)</a>
   <a href="#" class="menu-item" onclick="closeBook();">Exit to Library</a>
   
   <div class="menu-header">Tools</div>
   <a href="#" class="menu-item" onclick="addBookmark();">Add Bookmark Here</a>
-  <a href="#" class="menu-item" onclick="showBookmarksScreen();">View Bookmarks</a>
-  <a href="#" class="menu-item" onclick="showTOCScreen();">Table of Contents</a>
   
-  <div class="menu-header">Theme</div>
+  <div class="menu-header">Theme (Auto applies)</div>
   <a href="#" class="menu-item" onclick="setTheme('light');">Light</a>
   <a href="#" class="menu-item" onclick="setTheme('sepia');">Sepia</a>
   <a href="#" class="menu-item" onclick="setTheme('dark');">Dark</a>
   
-  <div class="menu-header">Typography (English)</div>
+  <div class="menu-header">Typography (Auto applies)</div>
   <a href="#" class="menu-item" onclick="setFontFam('serif-en');">Merriweather (Serif)</a>
   <a href="#" class="menu-item" onclick="setFontFam('sans-en');">Roboto (Sans)</a>
 </div>
@@ -270,7 +268,6 @@ var currentFontSize = 18;
 var uiState = 'HOME'; // HOME, READER, MENU, TOC, NOTES
 var currentTab = 'recent';
 var currentPageIndex = 0;
-var previousUiState = 'HOME';
 
 function showLoading(text) { 
   var l = document.getElementById('loading');
@@ -322,14 +319,13 @@ function renderHomeList(tabId) {
   document.getElementById('tabBtn-uploaded').className = 'tab-btn' + (tabId==='uploaded'?' active':'');
   document.getElementById('tabBtn-web').className = 'tab-btn' + (tabId==='web'?' active':'');
   
-  // Show/Hide Gutenberg Tools depending on tab
   var webTools = document.getElementById('webTabTools');
   var uploadBtn = document.getElementById('uploadBtn');
   if(tabId === 'web') { webTools.className = ''; uploadBtn.className = 'hidden'; } 
   else { webTools.className = 'hidden'; uploadBtn.className = 'action-btn'; }
 
   var listEl = document.getElementById('homeList');
-  listEl.innerHTML = '<div style="text-align:center;padding:10px;font-size:13px;opacity:0.7;">Loading Books...</div>';
+  listEl.innerHTML = '<div style="text-align:center;padding:10px;font-size:13px;opacity:0.7;">Loading...</div>';
 
   if (tabId === 'web') {
     var html = '';
@@ -356,9 +352,8 @@ function renderHomeList(tabId) {
   }
 }
 
-/* --- WEB ASSET FETCH ENGINE (Fixes Infinite Waiting) --- */
 function fetchWebBook(url, title) {
-  showLoading("Downloading " + title + "...");
+  showLoading("Downloading...");
   fetch(url)
     .then(function(res) {
       if(!res.ok) throw new Error("Network/CORS block");
@@ -368,55 +363,41 @@ function fetchWebBook(url, title) {
       var id = "web-" + Date.now();
       DB.saveBook(id, title, "", buf, function() {
         showLoading(false);
-        alert(title + " Saved! Check 'Local' tab.");
+        alert("Saved to Local tab!");
         renderHomeList('uploaded');
       });
     })
-    .catch(function(err) {
-      showLoading(false);
-      alert("Download blocked or timeout. Try again.");
-    });
+    .catch(function(err) { showLoading(false); alert("Download blocked or timeout."); });
 }
 
 function searchGutenberg() {
   var query = document.getElementById('gutenbergQuery').value;
   if(!query) return;
-  showLoading("Searching Gutenberg...");
+  showLoading("Searching...");
   
   fetch("https://gutendex.com/books/?search=" + encodeURIComponent(query))
     .then(function(res){ return res.json(); })
     .then(function(data){
       showLoading(false);
-      if(!data.results || data.results.length === 0) {
-        alert("No results found.");
-        return;
-      }
+      if(!data.results || data.results.length === 0) { alert("No results."); return; }
       WEB_CATALOG = [];
       data.results.forEach(function(item) {
         var epubUrl = item.formats["application/epub+zip"];
         if(epubUrl) {
-          // Wrapped securely through robust CORS tunnel for binary fetches
           var secureUrl = "https://corsproxy.io/?url=" + encodeURIComponent(epubUrl.replace(".images", ".noimages"));
-          WEB_CATALOG.push({
-            title: item.title,
-            url: secureUrl,
-            cover: item.formats["image/jpeg"] || ""
-          });
+          WEB_CATALOG.push({ title: item.title, url: secureUrl, cover: item.formats["image/jpeg"] || "" });
         }
       });
       renderHomeList('web');
     })
-    .catch(function(e){
-      showLoading(false);
-      alert("Error reading registry.");
-    });
+    .catch(function(e){ showLoading(false); alert("Error reading registry."); });
 }
 
 /* --- CORE READER GENERATOR --- */
 function openBook(id) {
-  showLoading("Opening Book...");
+  showLoading("Opening...");
   DB.getBookData(id, function(record) {
-    if(!record) { showLoading(false); alert("File missing."); return; }
+    if(!record) { showLoading(false); return; }
     Book.id = record.id;
     Book.title = record.title;
     
@@ -428,9 +409,8 @@ function openBook(id) {
       
       var opfStr = utf8Decode(Book.zip.getFile(opfPath));
       Book.spine = [];
+      var idrefs = [], match;
       
-      var idrefs = [];
-      var match;
       var itemrefRegex = /<itemref\s+idref="([^"]+)"/gi;
       while((match = itemrefRegex.exec(opfStr)) !== null) { idrefs.push(match[1]); }
       
@@ -464,12 +444,9 @@ function openBook(id) {
         showLoading(false);
         document.getElementById('homeScreen').className = 'hidden';
         document.getElementById('readerScreen').className = '';
-        changeState('READER');
+        uiState = 'READER';
       });
-    } catch(err) {
-      showLoading(false);
-      alert("EPUB error: " + err.message);
-    }
+    } catch(err) { showLoading(false); alert("EPUB error: " + err.message); }
   });
 }
 
@@ -510,7 +487,7 @@ function loadSpineItem(index, cb) {
   
   currentPageIndex = 0;
   contentEl.style.transform = 'translateX(0px)';
-  setTimeout(function() { updateProgress(); if(cb) cb(); }, 120);
+  setTimeout(function() { updateProgress(); if(cb) cb(); }, 50);
 }
 
 /* --- CLOUD PHONE HARDWARE PAGINATION ENGINE --- */
@@ -563,31 +540,23 @@ function updateProgress() {
 }
 
 /* --- CLOUD PHONE FEATURE NAVIGATION & UTILS --- */
-function changeState(newState) {
-  previousUiState = uiState;
-  uiState = newState;
-}
-
 function goBack() {
   if (uiState === 'MENU' || uiState === 'TOC' || uiState === 'NOTES') {
     closeSecondaryScreen();
   } else if (uiState === 'READER') {
     closeBook();
-  } else if (uiState === 'HOME') {
-    // Top-level, let KaiOS/CloudMosa exit the app natively if needed
-    console.log("App root reached");
-  }
+  } 
 }
 
 function toggleMenu() {
   var m = document.getElementById('menuOverlay');
   if(m.className === 'hidden') {
     m.className = '';
-    changeState('MENU');
+    uiState = 'MENU';
     document.getElementById('menuFirstItem').focus();
   } else {
     m.className = 'hidden';
-    changeState('READER');
+    uiState = 'READER';
   }
 }
 
@@ -596,7 +565,7 @@ function closeSecondaryScreen() {
   document.getElementById('notesScreen').className = 'hidden';
   document.getElementById('menuOverlay').className = 'hidden';
   document.getElementById('readerScreen').className = '';
-  changeState('READER');
+  uiState = 'READER';
 }
 
 function closeBook() {
@@ -604,7 +573,7 @@ function closeBook() {
   document.getElementById('readerScreen').className = 'hidden';
   document.getElementById('progressBar').className = 'hidden';
   document.getElementById('homeScreen').className = '';
-  changeState('HOME');
+  uiState = 'HOME';
   renderHomeList('recent');
 }
 
@@ -612,7 +581,7 @@ function showTOCScreen() {
   document.getElementById('menuOverlay').className = 'hidden';
   var t = document.getElementById('tocScreen');
   t.className = '';
-  changeState('TOC');
+  uiState = 'TOC';
   
   var listEl = document.getElementById('tocList');
   var html = '';
@@ -620,7 +589,10 @@ function showTOCScreen() {
     html += '<a href="#" onclick="jumpToSpine(' + i + ')">Section ' + (i + 1) + '</a>';
   }
   listEl.innerHTML = html;
-  if(listEl.firstChild) listEl.firstChild.focus();
+  
+  // Explicitly focus for D-Pad to latch on properly
+  var firstLink = listEl.querySelector('a');
+  if(firstLink) firstLink.focus();
 }
 
 function jumpToSpine(idx) {
@@ -629,21 +601,38 @@ function jumpToSpine(idx) {
   loadSpineItem(idx, function() { showLoading(false); });
 }
 
+/* FIX 3: Fully Implement Bookmark Jumping */
 function showBookmarksScreen() {
   document.getElementById('menuOverlay').className = 'hidden';
   document.getElementById('notesScreen').className = '';
-  changeState('NOTES');
+  uiState = 'NOTES';
   
   DB.getNotes(Book.id, function(notes) {
     var listEl = document.getElementById('notesList');
     var html = '';
     notes.forEach(function(n) {
-      html += '<a href="#" style="display:block; padding:10px; border-bottom:1px solid rgba(128,128,128,0.2); font-size:13px; text-decoration:none; color:inherit;">' +
-              '<strong>Sec ' + (n.chapter + 1) + ' (Pg ' + n.pageOffset + ')</strong><br>' + n.text + '</a>';
+      // Changed to fully functional jump link for D-Pad
+      html += '<a href="#" class="menu-item" onclick="jumpToBookmark(' + n.chapter + ', ' + n.pageOffset + ')">' +
+              '<strong>Sec ' + (n.chapter + 1) + ' (Pg ' + (n.pageOffset + 1) + ')</strong><br>' + n.text + '</a>';
     });
     if(notes.length === 0) html = '<div style="padding:20px; text-align:center;">No bookmarks.</div>';
     listEl.innerHTML = html;
-    if(listEl.firstChild) listEl.firstChild.focus();
+    
+    var firstLink = listEl.querySelector('a');
+    if(firstLink) firstLink.focus();
+  });
+}
+
+function jumpToBookmark(ch, pg) {
+  closeSecondaryScreen();
+  showLoading("Jumping...");
+  loadSpineItem(ch, function() {
+    var contentEl = document.getElementById('content');
+    var viewWidth = window.innerWidth;
+    currentPageIndex = pg;
+    contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
+    showLoading(false);
+    updateProgress();
   });
 }
 
@@ -657,7 +646,8 @@ function addBookmark() {
 
 /* --- CLOUD PHONE HARDWARE TYPOGRAPHY & ROTATION --- */
 function adjustTextSize(delta) {
-  currentFontSize = Math.max(14, Math.min(36, currentFontSize + delta));
+  // FIX 1: Allow massive zoom outs for specific devices by lowering limit to 8
+  currentFontSize = Math.max(8, Math.min(48, currentFontSize + delta));
   var contentEl = document.getElementById('content');
   contentEl.style.fontSize = currentFontSize + 'px';
   currentPageIndex = 0;
@@ -667,13 +657,9 @@ function adjustTextSize(delta) {
 
 function setRotation(dir) {
   var w = document.getElementById('wrapper');
-  if (dir === 'left') {
-    w.className = w.className === 'rotate-left' ? '' : 'rotate-left';
-  } else {
-    w.className = w.className === 'rotate-right' ? '' : 'rotate-right';
-  }
-  // Re-flow columns momentarily to adapt to viewport switch
-  setTimeout(function() { adjustTextSize(0); }, 300);
+  if (dir === 'left') { w.className = w.className === 'rotate-left' ? '' : 'rotate-left'; } 
+  else { w.className = w.className === 'rotate-right' ? '' : 'rotate-right'; }
+  setTimeout(function() { adjustTextSize(0); }, 50);
 }
 
 function scrollScreen(amount) {
@@ -686,29 +672,33 @@ function scrollScreen(amount) {
   if (active) active.scrollTop += amount;
 }
 
-function setTheme(t) { document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); }
-function setFontFam(f) { document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); }
+// FIX 4: Selecting Theme/Font immediately closes the menu to show text page
+function setTheme(t) { document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); closeSecondaryScreen(); }
+function setFontFam(f) { document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); closeSecondaryScreen(); }
 
 /* --- OFFICIAL HARDWARE LISTENER (KEYPAD / SOFT KEYS) --- */
 window.addEventListener('keydown', function(e) {
   
-  // Back Navigation System (Right Top Button / Backspace / Escape on KaiOS/CloudPhone)
+  // FIX 2: Back Nav safe exit (prevents exiting if typing in the Search input box)
   if (e.key === 'SoftRight' || e.key === 'Backspace' || e.key === 'Escape') {
-      if (uiState !== 'HOME') {
+      if (document.activeElement.tagName !== 'INPUT' && uiState !== 'HOME') {
           e.preventDefault(); 
           goBack();
           return;
       }
   }
 
-  // General App Hotkeys Map
+  // App Hotkeys Map
   switch (e.key) {
     case '*': adjustTextSize(-2); break;
     case '#': adjustTextSize(2); break;
     case '1': setRotation('left'); break;
     case '3': setRotation('right'); break;
-    case '5': 
+    case '0': // FIX 3: 0 opens main menu
       if(uiState === 'READER' || uiState === 'MENU') toggleMenu(); 
+      break;
+    case '5': // FIX 3: 5 opens Chapters (TOC)
+      if(uiState === 'READER') showTOCScreen(); 
       break;
     case '4': 
       if (uiState === 'READER') prevPage(); 
