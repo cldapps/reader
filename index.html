@@ -6,7 +6,7 @@
 <title>Cloud Phone EPUB Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&family=Merriweather:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&family=Merriweather:wght@400;700&family=Roboto:wght@400;700&family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
 
 <style>
 /* --- GLOBAL STYLES & THEMING (No Animations) --- */
@@ -16,13 +16,17 @@ body.theme-light { background:#f9f9f9; color:#1a1a1a; }
 body.theme-sepia { background:#f4ecd8; color:#3a2e22; }
 body.theme-dark { background:#121212; color:#e0e0e0; }
 
+body.font-default { font-family: inherit; }
 body.font-serif-en { font-family: 'Merriweather', Georgia, serif !important; }
 body.font-sans-en { font-family: 'Roboto', Arial, sans-serif !important; }
+body.font-serif-bn { font-family: 'Tiro Bangla', 'Kalpurush', serif !important; }
+body.font-sans-bn { font-family: 'Hind Siliguri', 'Siyam Rupali', sans-serif !important; }
 
-/* SPATIAL NAVIGATION FOCUS STATES (D-PAD) */
+/* SPATIAL NAVIGATION FOCUS STATES (D-PAD) - Made subtle and standard */
 a:focus, button:focus, input:focus, .book-card:focus, .tab-btn:focus, .menu-item:focus {
-    outline: 3px solid #ff9900 !important;
-    background-color: rgba(255, 153, 0, 0.2) !important;
+    outline: 2px solid #3b82f6 !important; 
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    border-radius: 4px;
 }
 
 /* --- UI SCREENS --- */
@@ -40,11 +44,6 @@ input[type=file] { display:none; }
 .book-card img { width:45px; height:65px; object-fit:cover; margin-right:12px; background:#888; border:1px solid rgba(128,128,128,0.5); }
 .book-card div { font-size:14px; font-weight:bold; line-height:1.3; }
 .book-card span { display:block; font-size:11px; font-weight:normal; opacity:0.7; margin-top:4px; }
-
-/* Gutenberg Search UI */
-.search-container { display:flex; margin-bottom: 10px; gap: 5px;}
-.search-container input { flex:1; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:14px; }
-.search-container button { padding:8px 12px; background:#0056b3; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;}
 
 /* --- PAGINATED READER --- */
 #wrapper { 
@@ -69,7 +68,6 @@ input[type=file] { display:none; }
     word-wrap: break-word;
     overflow-wrap: break-word;
     text-align: left; 
-    font-size: 18px;
     line-height: 1.5;
 }
 #content img { max-width:100%; height:auto; max-height:calc(100vh - 40px); object-fit:contain; display:block; margin: 5px auto; }
@@ -100,14 +98,7 @@ body.theme-sepia #loading { background:#3a2e22; color:#f4ecd8; }
 .hidden { display:none !important; }
 </style>
 </head>
-<body class="theme-light font-serif-en" onload="initApp()">
-
-<script>
-// Web Catalog Defaults
-var WEB_CATALOG = [
-  { title: "Alice in Wonderland", url: "https://corsproxy.io/?url=https://www.gutenberg.org/ebooks/11.epub.noimages", cover: "" }
-];
-</script>
+<body onload="initApp()">
 
 <div id="wrapper">
   <div id="homeScreen">
@@ -115,15 +106,7 @@ var WEB_CATALOG = [
     
     <div class="tab-bar">
       <a href="#" class="tab-btn active" id="tabBtn-recent" onclick="renderHomeList('recent')">Recent</a>
-      <a href="#" class="tab-btn" id="tabBtn-uploaded" onclick="renderHomeList('uploaded')">Local</a>
-      <a href="#" class="tab-btn" id="tabBtn-web" onclick="renderHomeList('web')">Web</a>
-    </div>
-
-    <div id="webTabTools" class="hidden">
-      <div class="search-container">
-        <input type="text" id="gutenbergQuery" placeholder="Search Gutenberg...">
-        <button onclick="searchGutenberg()">Search</button>
-      </div>
+      <a href="#" class="tab-btn" id="tabBtn-uploaded" onclick="renderHomeList('uploaded')">All Local</a>
     </div>
 
     <a href="#" class="action-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click();">+ Upload Local EPUB</a>
@@ -162,8 +145,11 @@ var WEB_CATALOG = [
   <a href="#" class="menu-item" onclick="setTheme('dark');">Dark</a>
   
   <div class="menu-header">Typography (Auto applies)</div>
-  <a href="#" class="menu-item" onclick="setFontFam('serif-en');">Merriweather (Serif)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('sans-en');">Roboto (Sans)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('default');">Default (EPUB embedded)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('serif-en');">Merriweather (EN Serif)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('sans-en');">Roboto (EN Sans)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('serif-bn');">Tiro Bangla (BN Serif)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('sans-bn');">Hind Siliguri (BN Sans)</a>
 </div>
 
 <div id="progressBar" class="hidden"></div>
@@ -321,7 +307,19 @@ function showLoading(text) {
   else { l.className = 'hidden'; }
 }
 
+function loadSettings() {
+  var theme = localStorage.getItem('epub_theme') || 'light';
+  var font = localStorage.getItem('epub_font') || 'default';
+  var fSize = localStorage.getItem('epub_fontsize');
+  
+  document.body.className = 'theme-' + theme + ' font-' + font;
+  if (fSize) {
+      currentFontSize = parseInt(fSize, 10);
+  }
+}
+
 function initApp() {
+  loadSettings();
   DB.init(function() { 
     renderHomeList('recent'); 
     setupFileUploadListener();
@@ -363,80 +361,22 @@ function renderHomeList(tabId) {
   currentTab = tabId;
   document.getElementById('tabBtn-recent').className = 'tab-btn' + (tabId==='recent'?' active':'');
   document.getElementById('tabBtn-uploaded').className = 'tab-btn' + (tabId==='uploaded'?' active':'');
-  document.getElementById('tabBtn-web').className = 'tab-btn' + (tabId==='web'?' active':'');
   
-  var webTools = document.getElementById('webTabTools');
-  var uploadBtn = document.getElementById('uploadBtn');
-  if(tabId === 'web') { webTools.className = ''; uploadBtn.className = 'hidden'; } 
-  else { webTools.className = 'hidden'; uploadBtn.className = 'action-btn'; }
-
   var listEl = document.getElementById('homeList');
   listEl.innerHTML = '<div style="text-align:center;padding:10px;font-size:13px;opacity:0.7;">Loading...</div>';
 
-  if (tabId === 'web') {
+  DB.getBooksList(function(books) {
+    var showBooks = books;
+    if (tabId === 'recent') showBooks = books.slice(0, 8);
     var html = '';
-    for(var i=0; i<WEB_CATALOG.length; i++) {
-       var b = WEB_CATALOG[i];
-       var img = b.cover || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-       html += '<a href="#" class="book-card" onclick="fetchWebBook(\''+b.url+'\',\''+b.title.replace(/'/g,"\\'")+'\')">' +
-               '<img src="'+img+'"><div>'+b.title+'<span>Press Enter to Download</span></div></a>';
+    for(var i=0; i<showBooks.length; i++) {
+      var coverSrc = showBooks[i].cover || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+      html += '<a href="#" class="book-card" onclick="openBook(\''+showBooks[i].id+'\')">' +
+              '<img src="'+coverSrc+'"><div>'+showBooks[i].title+'<span>Press Enter to Read</span></div></a>';
     }
+    if(showBooks.length === 0) html = '<div style="text-align:center;padding:25px;font-size:13px;opacity:0.5;">Shelf is empty.</div>';
     listEl.innerHTML = html;
-  } else {
-    DB.getBooksList(function(books) {
-      var showBooks = books;
-      if (tabId === 'recent') showBooks = books.slice(0, 8);
-      var html = '';
-      for(var i=0; i<showBooks.length; i++) {
-        var coverSrc = showBooks[i].cover || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-        html += '<a href="#" class="book-card" onclick="openBook(\''+showBooks[i].id+'\')">' +
-                '<img src="'+coverSrc+'"><div>'+showBooks[i].title+'<span>Press Enter to Read</span></div></a>';
-      }
-      if(showBooks.length === 0) html = '<div style="text-align:center;padding:25px;font-size:13px;opacity:0.5;">Shelf is empty.</div>';
-      listEl.innerHTML = html;
-    });
-  }
-}
-
-function fetchWebBook(url, title) {
-  showLoading("Downloading...");
-  fetch(url)
-    .then(function(res) {
-      if(!res.ok) throw new Error("Network/CORS block");
-      return res.arrayBuffer();
-    })
-    .then(function(buf) {
-      var id = "web-" + Date.now();
-      DB.saveBook(id, title, "", buf, function() {
-        showLoading(false);
-        alert("Saved to Local tab!");
-        renderHomeList('uploaded');
-      });
-    })
-    .catch(function(err) { showLoading(false); alert("Download blocked or timeout."); });
-}
-
-function searchGutenberg() {
-  var query = document.getElementById('gutenbergQuery').value;
-  if(!query) return;
-  showLoading("Searching...");
-  
-  fetch("https://gutendex.com/books/?search=" + encodeURIComponent(query))
-    .then(function(res){ return res.json(); })
-    .then(function(data){
-      showLoading(false);
-      if(!data.results || data.results.length === 0) { alert("No results."); return; }
-      WEB_CATALOG = [];
-      data.results.forEach(function(item) {
-        var epubUrl = item.formats["application/epub+zip"];
-        if(epubUrl) {
-          var secureUrl = "https://corsproxy.io/?url=" + encodeURIComponent(epubUrl.replace(".images", ".noimages"));
-          WEB_CATALOG.push({ title: item.title, url: secureUrl, cover: item.formats["image/jpeg"] || "" });
-        }
-      });
-      renderHomeList('web');
-    })
-    .catch(function(e){ showLoading(false); alert("Error reading registry."); });
+  });
 }
 
 /* --- CORE READER GENERATOR --- */
@@ -487,6 +427,7 @@ function openBook(id) {
       
       // Ensure the container is visible for scrollWidth calculations
       navigate('READER');
+      document.getElementById('content').style.fontSize = currentFontSize + 'px';
       
       loadSpineItem(Book.currentIndex, targetPage, function() {
         showLoading(false);
@@ -665,11 +606,15 @@ function addBookmark() {
 /* --- CLOUD PHONE HARDWARE TYPOGRAPHY & ROTATION --- */
 function adjustTextSize(delta) {
   currentFontSize = Math.max(8, Math.min(48, currentFontSize + delta));
+  localStorage.setItem('epub_fontsize', currentFontSize);
+  
   var contentEl = document.getElementById('content');
-  contentEl.style.fontSize = currentFontSize + 'px';
-  currentPageIndex = 0;
-  contentEl.style.transform = 'translateX(0px)';
-  updateProgress();
+  if(contentEl) {
+      contentEl.style.fontSize = currentFontSize + 'px';
+      currentPageIndex = 0;
+      contentEl.style.transform = 'translateX(0px)';
+      updateProgress();
+  }
 }
 
 function setRotation(dir) {
@@ -689,8 +634,17 @@ function scrollScreen(amount) {
   if (active) active.scrollTop += amount;
 }
 
-function setTheme(t) { document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); history.back(); }
-function setFontFam(f) { document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); history.back(); }
+function setTheme(t) { 
+  localStorage.setItem('epub_theme', t);
+  document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); 
+  history.back(); 
+}
+function setFontFam(f) { 
+  localStorage.setItem('epub_font', f);
+  document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); 
+  setTimeout(function() { adjustTextSize(0); }, 50); 
+  history.back(); 
+}
 
 /* --- OFFICIAL HARDWARE LISTENER (KEYPAD / SOFT KEYS) --- */
 window.addEventListener('keydown', function(e) {
@@ -706,6 +660,34 @@ window.addEventListener('keydown', function(e) {
       }
   }
 
+  // Circular Menu Navigation (D-PAD UP/DOWN)
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      var container;
+      if (uiState === 'HOME') container = document.getElementById('homeScreen');
+      else if (uiState === 'MENU') container = document.getElementById('menuOverlay');
+      else if (uiState === 'TOC') container = document.getElementById('tocScreen');
+      else if (uiState === 'NOTES') container = document.getElementById('notesScreen');
+      
+      if (container) {
+          e.preventDefault();
+          var focusable = Array.prototype.slice.call(container.querySelectorAll('a, button, input')).filter(function(el) {
+              return el.offsetWidth > 0 || el.offsetHeight > 0;
+          });
+          
+          if (focusable.length > 0) {
+              var currentIndex = focusable.indexOf(document.activeElement);
+              if (e.key === 'ArrowDown') {
+                  var nextIndex = (currentIndex + 1) % focusable.length;
+                  focusable[nextIndex].focus();
+              } else {
+                  var prevIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+                  focusable[prevIndex].focus();
+              }
+          }
+      }
+  }
+
+  // Numerical Pad Shortcuts
   switch (e.key) {
     case '*': adjustTextSize(-2); break;
     case '#': adjustTextSize(2); break;
