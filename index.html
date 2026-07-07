@@ -6,7 +6,7 @@
 <title>Cloud Phone EPUB Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&family=Merriweather:wght@400;700&family=Noto+Serif+Bengali:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&family=Merriweather:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 /* --- GLOBAL STYLES & THEMING (No Animations) --- */
@@ -18,8 +18,6 @@ body.theme-dark { background:#121212; color:#e0e0e0; }
 
 body.font-serif-en { font-family: 'Merriweather', Georgia, serif !important; }
 body.font-sans-en { font-family: 'Roboto', Arial, sans-serif !important; }
-body.font-serif-bn { font-family: 'Noto Serif Bengali', serif !important; }
-body.font-sans-bn { font-family: 'Hind Siliguri', sans-serif !important; }
 
 /* SPATIAL NAVIGATION FOCUS STATES (D-PAD) */
 a:focus, button:focus, input:focus, .book-card:focus, .tab-btn:focus, .menu-item:focus {
@@ -61,7 +59,6 @@ input[type=file] { display:none; }
 
 #readerScreen { width:100%; height:100%; overflow:hidden; position:relative; }
 
-/* FIX 1: Text alignment set to left to prevent ugly breaks, word-wrap handled */
 #content { 
     height: calc(100% - 20px); 
     margin: 10px;
@@ -71,7 +68,7 @@ input[type=file] { display:none; }
     column-fill: auto;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    text-align: left; /* Justify causes bad breaks on narrow feature phones */
+    text-align: left; 
     font-size: 18px;
     line-height: 1.5;
 }
@@ -152,11 +149,12 @@ var WEB_CATALOG = [
 
 <div id="menuOverlay" class="hidden">
   <div class="menu-header">Menu Options</div>
-  <a href="#" class="menu-item" id="menuFirstItem" onclick="toggleMenu();">Resume Reading (0)</a>
+  <a href="#" class="menu-item" id="menuFirstItem" onclick="history.back();">Resume Reading (0)</a>
   <a href="#" class="menu-item" onclick="closeBook();">Exit to Library</a>
   
   <div class="menu-header">Tools</div>
   <a href="#" class="menu-item" onclick="addBookmark();">Add Bookmark Here</a>
+  <a href="#" class="menu-item" onclick="showBookmarksScreen();">View Bookmarks</a>
   
   <div class="menu-header">Theme (Auto applies)</div>
   <a href="#" class="menu-item" onclick="setTheme('light');">Light</a>
@@ -188,14 +186,20 @@ var DB = (function() {
     },
     saveBook: function(id, title, coverData, arrayBuf, cb) {
       var tx = db.transaction('books', 'readwrite');
-      tx.objectStore('books').put({id: id, title: title, cover: coverData, data: arrayBuf, added: Date.now(), lastRead: Date.now()});
+      tx.objectStore('books').put({id: id, title: title, cover: coverData, data: arrayBuf, added: Date.now(), lastRead: Date.now(), lastChapter: 0, lastPage: 0});
       tx.oncomplete = function() { if(cb) cb(); };
     },
-    updateLastRead: function(id) {
-      var req = db.transaction('books', 'readwrite').objectStore('books').get(id);
+    saveProgress: function(id, chapter, page) {
+      var store = db.transaction('books', 'readwrite').objectStore('books');
+      var req = store.get(id);
       req.onsuccess = function(e) {
         var rec = e.target.result;
-        if(rec) { rec.lastRead = Date.now(); db.transaction('books','readwrite').objectStore('books').put(rec); }
+        if(rec) { 
+            rec.lastRead = Date.now(); 
+            rec.lastChapter = chapter; 
+            rec.lastPage = page; 
+            store.put(rec); 
+        }
       };
     },
     getBooksList: function(cb) {
@@ -221,7 +225,7 @@ var DB = (function() {
   };
 })();
 
-/* --- DEFLATE ENGINE --- */
+/* --- DEFLATE ENGINE MINIFIED --- */
 var Inflate=(function(){var LBASE=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];var LEXT=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];var DBASE=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];var DEXT=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];var CLORDER=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];function BitReader(data,pos){this.data=data;this.pos=pos||0;this.bitbuf=0;this.bitcnt=0;}BitReader.prototype.getBit=function(){if(this.bitcnt===0){this.bitbuf=this.data[this.pos++];this.bitcnt=8;}var bit=this.bitbuf&1;this.bitbuf>>=1;this.bitcnt--;return bit;};BitReader.prototype.getBits=function(n){var v=0;for(var i=0;i<n;i++)v|=this.getBit()<<i;return v;};function buildHuffman(lengths){var MAXBITS=15;var counts=[];for(var z=0;z<=MAXBITS;z++)counts.push(0);for(var i=0;i<lengths.length;i++)counts[lengths[i]]++;counts[0]=0;var offs=[];for(z=0;z<=MAXBITS;z++)offs.push(0);for(i=1;i<MAXBITS;i++)offs[i+1]=offs[i]+counts[i];var symbols=[];for(i=0;i<lengths.length;i++)symbols.push(0);for(i=0;i<lengths.length;i++){if(lengths[i]!==0)symbols[offs[lengths[i]]++]=i;}return{counts:counts,symbols:symbols};}function decodeSymbol(br,table){var code=0,first=0,index=0;for(var len=1;len<=15;len++){code|=br.getBit();var count=table.counts[len];if(code-first<count)return table.symbols[index+(code-first)];index+=count;first+=count;first<<=1;code<<=1;}throw new Error('bad huffman');}function inflateBlockData(br,litTable,distTable,out){for(;;){var sym=decodeSymbol(br,litTable);if(sym<256){out.push(sym);}else if(sym===256){return;}else{sym-=257;var len=LBASE[sym]+br.getBits(LEXT[sym]);var dsym=decodeSymbol(br,distTable);var dist=DBASE[dsym]+br.getBits(DEXT[dsym]);var start=out.length-dist;for(var k=0;k<len;k++)out.push(out[start+k]);}}}var FIXED_LIT,FIXED_DIST;(function(){var lens=[];var i=0;for(;i<=143;i++)lens.push(8);for(;i<=255;i++)lens.push(9);for(;i<=279;i++)lens.push(7);for(;i<=287;i++)lens.push(8);FIXED_LIT=buildHuffman(lens);var dlens=[];for(i=0;i<30;i++)dlens.push(5);FIXED_DIST=buildHuffman(dlens);})();function inflateDynamicTables(br){var hlit=br.getBits(5)+257;var hdist=br.getBits(5)+1;var hclen=br.getBits(4)+4;var clLens=[];for(var z=0;z<19;z++)clLens.push(0);for(var i=0;i<hclen;i++)clLens[CLORDER[i]]=br.getBits(3);var clTable=buildHuffman(clLens);var lens=[];while(lens.length<hlit+hdist){var sym=decodeSymbol(br,clTable);if(sym<16){lens.push(sym);}else if(sym===16){var prev=lens[lens.length-1];var rep=br.getBits(2)+3;for(var r=0;r<rep;r++)lens.push(prev);}else if(sym===17){var rep2=br.getBits(3)+3;for(var r2=0;r2<rep2;r2++)lens.push(0);}else if(sym===18){var rep3=br.getBits(7)+11;for(var r3=0;r3<rep3;r3++)lens.push(0);}}return{lit:buildHuffman(lens.slice(0,hlit)),dist:buildHuffman(lens.slice(hlit,hlit+hdist))};}function inflateRaw(data,pos){var br=new BitReader(data,pos);var out=[];for(;;){var final=br.getBit();var type=br.getBits(2);if(type===0){br.bitbuf=0;br.bitcnt=0;var len=data[br.pos]|(data[br.pos+1]<<8);br.pos+=4;for(var i=0;i<len;i++)out.push(data[br.pos++]);}else if(type===1){inflateBlockData(br,FIXED_LIT,FIXED_DIST,out);}else if(type===2){var tabs=inflateDynamicTables(br);inflateBlockData(br,tabs.lit,tabs.dist,out);}else{throw new Error('bad block');}if(final)break;}return{data:new Uint8Array(out),endPos:br.pos};}return{inflateRaw:inflateRaw};})();
 
 function utf8Decode(bytes){var out='',i=0;while(i<bytes.length){var c=bytes[i++];if(c<0x80){out+=String.fromCharCode(c);}else if(c<0xE0){out+=String.fromCharCode(((c&0x1F)<<6)|(bytes[i++]&0x3F));}else if(c<0xF0){out+=String.fromCharCode(((c&0x0F)<<12)|((bytes[i++]&0x3F)<<6)|(bytes[i++]&0x3F));}else{var cp=((c&0x07)<<18)|((bytes[i++]&0x3F)<<12)|((bytes[i++]&0x3F)<<6)|(bytes[i++]&0x3F);cp-=0x10000;out+=String.fromCharCode(0xD800+(cp>>10),0xDC00+(cp&0x3FF));}}return out;}
@@ -262,10 +266,52 @@ function resolvePath(baseDir,rel){
   return clean.join('/');
 }
 
+/* --- TRUE SPA ROUTING ENGINE --- */
+var uiState = 'HOME';
+history.replaceState({ screen: 'HOME' }, "", "#HOME");
+
+function navigate(newState) {
+    if (uiState === newState) return;
+    uiState = newState;
+    history.pushState({ screen: newState }, "", "#" + newState);
+    applyScreenState(newState);
+}
+
+window.addEventListener('popstate', function(e) {
+    var state = e.state ? e.state.screen : 'HOME';
+    uiState = state;
+    applyScreenState(state);
+});
+
+function applyScreenState(state) {
+    document.getElementById('homeScreen').className = 'hidden';
+    document.getElementById('readerScreen').className = 'hidden';
+    document.getElementById('tocScreen').className = 'hidden';
+    document.getElementById('notesScreen').className = 'hidden';
+    document.getElementById('menuOverlay').className = 'hidden';
+    document.getElementById('progressBar').className = 'hidden';
+    
+    if (state === 'HOME') {
+        document.getElementById('homeScreen').className = '';
+        renderHomeList(currentTab);
+    } else if (state === 'READER') {
+        document.getElementById('readerScreen').className = '';
+        document.getElementById('progressBar').className = '';
+    } else if (state === 'MENU') {
+        document.getElementById('readerScreen').className = ''; 
+        document.getElementById('menuOverlay').className = '';
+        var m1 = document.getElementById('menuFirstItem');
+        if(m1) m1.focus();
+    } else if (state === 'TOC') {
+        document.getElementById('tocScreen').className = '';
+    } else if (state === 'NOTES') {
+        document.getElementById('notesScreen').className = '';
+    }
+}
+
 /* --- SYSTEM CONTROL STATE --- */
 var Book = { id: null, zip: null, spine: [], currentIndex: 0, title: '', baseDir: '' };
 var currentFontSize = 18;
-var uiState = 'HOME'; // HOME, READER, MENU, TOC, NOTES
 var currentTab = 'recent';
 var currentPageIndex = 0;
 
@@ -436,21 +482,20 @@ function openBook(id) {
         }
       }
       
-      Book.currentIndex = 0;
-      currentPageIndex = 0;
-      DB.updateLastRead(Book.id);
+      Book.currentIndex = record.lastChapter || 0;
+      var targetPage = record.lastPage || 0;
       
-      loadSpineItem(Book.currentIndex, function() {
+      // Ensure the container is visible for scrollWidth calculations
+      navigate('READER');
+      
+      loadSpineItem(Book.currentIndex, targetPage, function() {
         showLoading(false);
-        document.getElementById('homeScreen').className = 'hidden';
-        document.getElementById('readerScreen').className = '';
-        uiState = 'READER';
       });
     } catch(err) { showLoading(false); alert("EPUB error: " + err.message); }
   });
 }
 
-function loadSpineItem(index, cb) {
+function loadSpineItem(index, targetPage, cb) {
   if(index < 0 || index >= Book.spine.length) return;
   Book.currentIndex = index;
   var path = Book.spine[index];
@@ -485,9 +530,23 @@ function loadSpineItem(index, cb) {
     }
   }
   
-  currentPageIndex = 0;
-  contentEl.style.transform = 'translateX(0px)';
-  setTimeout(function() { updateProgress(); if(cb) cb(); }, 50);
+  // Allow DOM to process the text so scrollWidth computes correctly 
+  setTimeout(function() { 
+      var viewWidth = window.innerWidth;
+      
+      if (targetPage === -1) {
+          // Navigated backwards from a previous chapter, go to end of document
+          var totalWidth = contentEl.scrollWidth;
+          var maxPages = Math.ceil(totalWidth / viewWidth);
+          currentPageIndex = Math.max(0, maxPages - 1);
+      } else {
+          currentPageIndex = targetPage || 0;
+      }
+      
+      contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
+      updateProgress(); 
+      if(cb) cb(); 
+  }, 50);
 }
 
 /* --- CLOUD PHONE HARDWARE PAGINATION ENGINE --- */
@@ -503,7 +562,7 @@ function nextPage() {
     updateProgress();
   } else if (Book.currentIndex < Book.spine.length - 1) {
     showLoading("Loading...");
-    loadSpineItem(Book.currentIndex + 1, function() { showLoading(false); });
+    loadSpineItem(Book.currentIndex + 1, 0, function() { showLoading(false); });
   }
 }
 
@@ -517,13 +576,8 @@ function prevPage() {
     updateProgress();
   } else if (Book.currentIndex > 0) {
     showLoading("Loading...");
-    loadSpineItem(Book.currentIndex - 1, function() {
-      var totalWidth = contentEl.scrollWidth;
-      var maxPages = Math.ceil(totalWidth / viewWidth);
-      currentPageIndex = Math.max(0, maxPages - 1);
-      contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
+    loadSpineItem(Book.currentIndex - 1, -1, function() {
       showLoading(false);
-      updateProgress();
     });
   }
 }
@@ -533,120 +587,83 @@ function updateProgress() {
   var totalWidth = contentEl.scrollWidth;
   var viewWidth = window.innerWidth;
   var maxPages = Math.ceil(totalWidth / viewWidth) || 1;
+  
+  // Failsafe in case rotation or resize drops max pages drastically
+  if (currentPageIndex >= maxPages) {
+      currentPageIndex = Math.max(0, maxPages - 1);
+      contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
+  }
+
   var chProgress = (Book.currentIndex / Math.max(1, Book.spine.length)) * 100;
   var pgProgress = (currentPageIndex / maxPages) * (100 / Math.max(1, Book.spine.length));
   document.getElementById('progressBar').style.width = Math.min(100, Math.floor(chProgress + pgProgress)) + '%';
-  document.getElementById('progressBar').className = '';
+  
+  // Persist location locally
+  if (Book.id) { DB.saveProgress(Book.id, Book.currentIndex, currentPageIndex); }
 }
 
 /* --- CLOUD PHONE FEATURE NAVIGATION & UTILS --- */
-function goBack() {
-  if (uiState === 'MENU' || uiState === 'TOC' || uiState === 'NOTES') {
-    closeSecondaryScreen();
-  } else if (uiState === 'READER') {
-    closeBook();
-  } 
-}
-
-function toggleMenu() {
-  var m = document.getElementById('menuOverlay');
-  if(m.className === 'hidden') {
-    m.className = '';
-    uiState = 'MENU';
-    document.getElementById('menuFirstItem').focus();
-  } else {
-    m.className = 'hidden';
-    uiState = 'READER';
-  }
-}
-
-function closeSecondaryScreen() {
-  document.getElementById('tocScreen').className = 'hidden';
-  document.getElementById('notesScreen').className = 'hidden';
-  document.getElementById('menuOverlay').className = 'hidden';
-  document.getElementById('readerScreen').className = '';
-  uiState = 'READER';
-}
-
 function closeBook() {
-  closeSecondaryScreen();
-  document.getElementById('readerScreen').className = 'hidden';
-  document.getElementById('progressBar').className = 'hidden';
-  document.getElementById('homeScreen').className = '';
-  uiState = 'HOME';
-  renderHomeList('recent');
+  navigate('HOME');
+  Book.id = null; 
 }
 
 function showTOCScreen() {
-  document.getElementById('menuOverlay').className = 'hidden';
-  var t = document.getElementById('tocScreen');
-  t.className = '';
-  uiState = 'TOC';
-  
   var listEl = document.getElementById('tocList');
   var html = '';
   for(var i=0; i<Book.spine.length; i++) {
     html += '<a href="#" onclick="jumpToSpine(' + i + ')">Section ' + (i + 1) + '</a>';
   }
   listEl.innerHTML = html;
+  navigate('TOC');
   
-  // Explicitly focus for D-Pad to latch on properly
   var firstLink = listEl.querySelector('a');
   if(firstLink) firstLink.focus();
 }
 
 function jumpToSpine(idx) {
-  closeSecondaryScreen();
   showLoading("Jumping...");
-  loadSpineItem(idx, function() { showLoading(false); });
+  history.back(); // Visually pop back to reader frame immediately
+  setTimeout(function() {
+      loadSpineItem(idx, 0, function() { showLoading(false); });
+  }, 50);
 }
 
-/* FIX 3: Fully Implement Bookmark Jumping */
 function showBookmarksScreen() {
-  document.getElementById('menuOverlay').className = 'hidden';
-  document.getElementById('notesScreen').className = '';
-  uiState = 'NOTES';
-  
   DB.getNotes(Book.id, function(notes) {
     var listEl = document.getElementById('notesList');
     var html = '';
     notes.forEach(function(n) {
-      // Changed to fully functional jump link for D-Pad
       html += '<a href="#" class="menu-item" onclick="jumpToBookmark(' + n.chapter + ', ' + n.pageOffset + ')">' +
               '<strong>Sec ' + (n.chapter + 1) + ' (Pg ' + (n.pageOffset + 1) + ')</strong><br>' + n.text + '</a>';
     });
     if(notes.length === 0) html = '<div style="padding:20px; text-align:center;">No bookmarks.</div>';
     listEl.innerHTML = html;
     
+    navigate('NOTES');
     var firstLink = listEl.querySelector('a');
     if(firstLink) firstLink.focus();
   });
 }
 
 function jumpToBookmark(ch, pg) {
-  closeSecondaryScreen();
   showLoading("Jumping...");
-  loadSpineItem(ch, function() {
-    var contentEl = document.getElementById('content');
-    var viewWidth = window.innerWidth;
-    currentPageIndex = pg;
-    contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
-    showLoading(false);
-    updateProgress();
-  });
+  history.back(); // Visually pop back to reader frame immediately
+  setTimeout(function() {
+      loadSpineItem(ch, pg, function() { showLoading(false); });
+  }, 50);
 }
 
 function addBookmark() {
   var sampleText = document.getElementById('content').innerText.substring(0, 40) + "...";
   DB.saveNote(Book.id, Book.currentIndex, currentPageIndex, sampleText, function() {
     alert("Bookmark Saved!");
-    toggleMenu();
+    history.back();
   });
 }
 
 /* --- CLOUD PHONE HARDWARE TYPOGRAPHY & ROTATION --- */
 function adjustTextSize(delta) {
-  // FIX 1: Allow massive zoom outs for specific devices by lowering limit to 8
   currentFontSize = Math.max(8, Math.min(48, currentFontSize + delta));
   var contentEl = document.getElementById('content');
   contentEl.style.fontSize = currentFontSize + 'px';
@@ -672,33 +689,35 @@ function scrollScreen(amount) {
   if (active) active.scrollTop += amount;
 }
 
-// FIX 4: Selecting Theme/Font immediately closes the menu to show text page
-function setTheme(t) { document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); closeSecondaryScreen(); }
-function setFontFam(f) { document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); closeSecondaryScreen(); }
+function setTheme(t) { document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); history.back(); }
+function setFontFam(f) { document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); history.back(); }
 
 /* --- OFFICIAL HARDWARE LISTENER (KEYPAD / SOFT KEYS) --- */
 window.addEventListener('keydown', function(e) {
   
-  // FIX 2: Back Nav safe exit (prevents exiting if typing in the Search input box)
+  // Safe SPA intercept for native app back buttons
   if (e.key === 'SoftRight' || e.key === 'Backspace' || e.key === 'Escape') {
-      if (document.activeElement.tagName !== 'INPUT' && uiState !== 'HOME') {
+      if (document.activeElement.tagName === 'INPUT') return; 
+      
+      if (uiState !== 'HOME') {
           e.preventDefault(); 
-          goBack();
+          history.back(); 
           return;
       }
   }
 
-  // App Hotkeys Map
   switch (e.key) {
     case '*': adjustTextSize(-2); break;
     case '#': adjustTextSize(2); break;
     case '1': setRotation('left'); break;
     case '3': setRotation('right'); break;
-    case '0': // FIX 3: 0 opens main menu
-      if(uiState === 'READER' || uiState === 'MENU') toggleMenu(); 
+    case '0': 
+      if (uiState === 'READER') navigate('MENU'); 
+      else if (uiState === 'MENU') history.back();
       break;
-    case '5': // FIX 3: 5 opens Chapters (TOC)
-      if(uiState === 'READER') showTOCScreen(); 
+    case '5': 
+      if (uiState === 'READER') showTOCScreen(); 
+      else if (uiState === 'TOC') history.back();
       break;
     case '4': 
       if (uiState === 'READER') prevPage(); 
