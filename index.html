@@ -3,34 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, user-scalable=no">
-<title>EPUB Reader</title>
+<title>Cloud Phone EPUB Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght=400;600&family=Merriweather:wght=400;700&family=Noto+Serif+Bengali:wght=400;700&family=Roboto:wght=400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&family=Merriweather:wght@400;700&family=Noto+Serif+Bengali:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 /* --- GLOBAL STYLES & THEMING --- */
 html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; transition: background 0.2s, color 0.2s; }
 
-/* Themes */
 body.theme-light { background:#f9f9f9; color:#1a1a1a; }
 body.theme-sepia { background:#f4ecd8; color:#3a2e22; }
 body.theme-dark { background:#121212; color:#e0e0e0; }
 
-/* Fonts */
 body.font-serif-en { font-family: 'Merriweather', Georgia, serif !important; }
 body.font-sans-en { font-family: 'Roboto', Arial, sans-serif !important; }
 body.font-serif-bn { font-family: 'Noto Serif Bengali', serif !important; }
 body.font-sans-bn { font-family: 'Hind Siliguri', sans-serif !important; }
 
-/* Focus States (Critical for D-PAD) */
+/* SPATIAL NAVIGATION FOCUS STATES (D-PAD) */
 a:focus, button:focus, input:focus, .book-card:focus, .tab-btn:focus, .menu-item:focus {
-    outline: 3px solid #0056b3 !important;
-    background-color: rgba(0, 86, 179, 0.1) !important;
-}
-body.theme-dark a:focus, body.theme-dark button:focus, body.theme-dark .book-card:focus, body.theme-dark .menu-item:focus {
-    outline: 3px solid #4da3ff !important;
-    background-color: rgba(77, 163, 255, 0.2) !important;
+    outline: 3px solid #ff9900 !important;
+    background-color: rgba(255, 153, 0, 0.2) !important;
 }
 
 /* --- UI SCREENS --- */
@@ -49,23 +43,31 @@ input[type=file] { display:none; }
 .book-card div { font-size:14px; font-weight:bold; line-height:1.3; }
 .book-card span { display:block; font-size:11px; font-weight:normal; opacity:0.7; margin-top:4px; }
 
+/* Gutenberg Search UI */
+.search-container { display:flex; margin-bottom: 10px; gap: 5px;}
+.search-container input { flex:1; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:14px; }
+.search-container button { padding:8px 12px; background:#0056b3; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;}
+
 /* --- PAGINATED READER --- */
 #wrapper { 
     width: 100vw; height: 100vh; 
     overflow: hidden; 
     position: absolute; top: 0; left: 0;
     box-sizing: border-box;
+    transition: transform 0.3s;
 }
+
+#wrapper.rotate-left { width: 100vh; height: 100vw; top: 100vh; left: 0; transform-origin: 0 0; transform: rotate(-90deg); }
+#wrapper.rotate-right { width: 100vh; height: 100vw; top: 0; left: 100vw; transform-origin: 0 0; transform: rotate(90deg); }
 
 #readerScreen { width:100%; height:100%; overflow:hidden; position:relative; }
 
-/* The True Optimized CSS Pagination Engine */
 #content { 
-    height: calc(100vh - 40px); 
-    margin: 20px;
+    height: calc(100% - 20px); 
+    margin: 10px;
     box-sizing: border-box; 
-    column-width: calc(100vw - 40px); 
-    column-gap: 40px; 
+    column-width: calc(100vw - 20px); 
+    column-gap: 20px; 
     column-fill: auto;
     word-wrap: break-word;
     text-align: justify;
@@ -73,7 +75,7 @@ input[type=file] { display:none; }
     line-height: 1.6;
     transition: transform 0.25s ease-out;
 }
-#content img { max-width:100%; height:auto; max-height:calc(100vh - 80px); object-fit:contain; display:block; margin: 10px auto; }
+#content img { max-width:100%; height:auto; max-height:calc(100vh - 40px); object-fit:contain; display:block; margin: 5px auto; }
 
 #progressBar { position:fixed; bottom:0; left:0; height:4px; background:#0056b3; width:0%; z-index:999; transition:width 0.3s; }
 body.theme-dark #progressBar { background:#4da3ff; }
@@ -86,13 +88,12 @@ body.theme-dark #progressBar { background:#4da3ff; }
 .menu-item { display:block; padding:14px; border-bottom:1px solid rgba(128,128,128,0.2); color:inherit; text-decoration:none; font-size:14px; }
 .menu-header { font-size:11px; opacity:0.6; padding:16px 14px 4px 14px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; }
 
-/* TOC List fixed */
 #tocList a { display:block; padding:12px; border-bottom:1px solid rgba(128,128,128,0.2); color:inherit; text-decoration:none; font-size:14px; }
 
 #loading { 
     padding:15px; font-family:sans-serif; font-size:14px; text-align:center; 
     position:fixed; top:50%; left:50%; transform: translate(-50%, -50%);
-    width:80%; max-width:300px; font-weight:bold; z-index:2000; 
+    width:80%; font-weight:bold; z-index:2000; 
     box-shadow:0 4px 15px rgba(0,0,0,0.3); border-radius:4px; box-sizing: border-box;
 }
 body.theme-light #loading { background:#111; color:#fff; }
@@ -105,9 +106,9 @@ body.theme-sepia #loading { background:#3a2e22; color:#f4ecd8; }
 <body class="theme-light font-serif-en" onload="initApp()">
 
 <script>
-// Web Catalog Defaults (Proxied through allorigins proxy to bypass CORS roadblocks)
+// Web Catalog Defaults
 var WEB_CATALOG = [
-  { title: "Alice in Wonderland", url: "https://api.allorigins.win/raw?url=https://www.gutenberg.org/ebooks/11.epub.noimages", cover: "" }
+  { title: "Alice in Wonderland", url: "https://corsproxy.io/?url=https://www.gutenberg.org/ebooks/11.epub.noimages", cover: "" }
 ];
 </script>
 
@@ -121,45 +122,43 @@ var WEB_CATALOG = [
       <a href="#" class="tab-btn" id="tabBtn-web" onclick="renderHomeList('web')">Web</a>
     </div>
 
-    <a href="#" class="action-btn" onclick="document.getElementById('fileInput').click();">+ Upload Local EPUB</a>
+    <div id="webTabTools" class="hidden">
+      <div class="search-container">
+        <input type="text" id="gutenbergQuery" placeholder="Search Gutenberg...">
+        <button onclick="searchGutenberg()">Search</button>
+      </div>
+    </div>
+
+    <a href="#" class="action-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click();">+ Upload Local EPUB</a>
     <input type="file" id="fileInput" accept=".epub,application/epub+zip">
     
     <div id="homeList"></div>
   </div>
 
-  <div id="readerScreen" class="hidden" onclick="handleReaderTap(event)">
+  <div id="readerScreen" class="hidden">
     <div id="content"></div>
   </div>
 
   <div id="tocScreen" class="hidden">
     <div class="home-header">Chapters</div>
     <div id="tocList"></div>
-    <a href="#" class="action-btn" onclick="closeSecondaryScreen();">Back to Reader</a>
   </div>
 
   <div id="notesScreen" class="hidden">
     <div class="home-header">My Bookmarks</div>
     <div id="notesList"></div>
-    <a href="#" class="action-btn" onclick="closeSecondaryScreen();">Back to Reader</a>
   </div>
 </div>
 
 <div id="menuOverlay" class="hidden">
-  <div class="menu-header">Main Options</div>
-  <a href="#" class="menu-item" id="menuFirstItem" onclick="toggleMenu();">Resume Reading</a>
+  <div class="menu-header">Menu Options</div>
+  <a href="#" class="menu-item" id="menuFirstItem" onclick="toggleMenu();">Resume Reading (5)</a>
   <a href="#" class="menu-item" onclick="closeBook();">Exit to Library</a>
   
-  <div class="menu-header">Discover</div>
-  <a href="#" class="menu-item" onclick="searchGutenberg();">Search Gutenberg</a>
-
   <div class="menu-header">Tools</div>
   <a href="#" class="menu-item" onclick="addBookmark();">Add Bookmark Here</a>
   <a href="#" class="menu-item" onclick="showBookmarksScreen();">View Bookmarks</a>
   <a href="#" class="menu-item" onclick="showTOCScreen();">Table of Contents</a>
-  
-  <div class="menu-header">Text Size</div>
-  <a href="#" class="menu-item" onclick="adjustTextSize(2);">Increase Text Size (+)</a>
-  <a href="#" class="menu-item" onclick="adjustTextSize(-2);">Decrease Text Size (-)</a>
   
   <div class="menu-header">Theme</div>
   <a href="#" class="menu-item" onclick="setTheme('light');">Light</a>
@@ -169,10 +168,6 @@ var WEB_CATALOG = [
   <div class="menu-header">Typography (English)</div>
   <a href="#" class="menu-item" onclick="setFontFam('serif-en');">Merriweather (Serif)</a>
   <a href="#" class="menu-item" onclick="setFontFam('sans-en');">Roboto (Sans)</a>
-  
-  <div class="menu-header">Typography (Bengali)</div>
-  <a href="#" class="menu-item" onclick="setFontFam('serif-bn');">Noto Serif (Bengali)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('sans-bn');">Hind Siliguri (Bengali)</a>
 </div>
 
 <div id="progressBar" class="hidden"></div>
@@ -269,12 +264,13 @@ function resolvePath(baseDir,rel){
   return clean.join('/');
 }
 
-/* --- SYSTEM CONTROL STATE & UI --- */
+/* --- SYSTEM CONTROL STATE --- */
 var Book = { id: null, zip: null, spine: [], currentIndex: 0, title: '', baseDir: '' };
 var currentFontSize = 18;
 var uiState = 'HOME'; // HOME, READER, MENU, TOC, NOTES
 var currentTab = 'recent';
 var currentPageIndex = 0;
+var previousUiState = 'HOME';
 
 function showLoading(text) { 
   var l = document.getElementById('loading');
@@ -293,7 +289,7 @@ function setupFileUploadListener() {
   document.getElementById('fileInput').addEventListener('change', function(e) {
     var file = e.target.files[0];
     if(!file) return;
-    showLoading("Uploading & Processing Local EPUB...");
+    showLoading("Processing Local File...");
     var r = new FileReader();
     r.onload = function(evt) {
       var arrBuf = evt.target.result;
@@ -312,34 +308,39 @@ function setupFileUploadListener() {
         });
       } catch(err) {
         showLoading(false);
-        alert("Parsing failed. Check if asset is DRM free.");
+        alert("Parsing failed. Unsupported or DRM protected.");
       }
     };
     r.readAsArrayBuffer(file);
   });
 }
 
-/* --- TAB MANAGEMENT & LIVE LIBRARY VIEW --- */
+/* --- TABS & LIBRARY VIEW --- */
 function renderHomeList(tabId) {
   currentTab = tabId;
   document.getElementById('tabBtn-recent').className = 'tab-btn' + (tabId==='recent'?' active':'');
   document.getElementById('tabBtn-uploaded').className = 'tab-btn' + (tabId==='uploaded'?' active':'');
   document.getElementById('tabBtn-web').className = 'tab-btn' + (tabId==='web'?' active':'');
   
+  // Show/Hide Gutenberg Tools depending on tab
+  var webTools = document.getElementById('webTabTools');
+  var uploadBtn = document.getElementById('uploadBtn');
+  if(tabId === 'web') { webTools.className = ''; uploadBtn.className = 'hidden'; } 
+  else { webTools.className = 'hidden'; uploadBtn.className = 'action-btn'; }
+
   var listEl = document.getElementById('homeList');
-  listEl.innerHTML = '<div style="text-align:center;padding:10px;font-size:13px;opacity:0.7;">Reading Archive...</div>';
+  listEl.innerHTML = '<div style="text-align:center;padding:10px;font-size:13px;opacity:0.7;">Loading Books...</div>';
 
   if (tabId === 'web') {
     var html = '';
     for(var i=0; i<WEB_CATALOG.length; i++) {
        var b = WEB_CATALOG[i];
        var img = b.cover || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-       html += '<a href="#" class="book-card" onclick="fetchWebBook(\''+b.url+'\',\''+b.title+'\')">' +
-               '<img src="'+img+'"><div>'+b.title+'<span>Click to Download & Sync</span></div></a>';
+       html += '<a href="#" class="book-card" onclick="fetchWebBook(\''+b.url+'\',\''+b.title.replace(/'/g,"\\'")+'\')">' +
+               '<img src="'+img+'"><div>'+b.title+'<span>Press Enter to Download</span></div></a>';
     }
     listEl.innerHTML = html;
-  } 
-  else {
+  } else {
     DB.getBooksList(function(books) {
       var showBooks = books;
       if (tabId === 'recent') showBooks = books.slice(0, 8);
@@ -347,60 +348,55 @@ function renderHomeList(tabId) {
       for(var i=0; i<showBooks.length; i++) {
         var coverSrc = showBooks[i].cover || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
         html += '<a href="#" class="book-card" onclick="openBook(\''+showBooks[i].id+'\')">' +
-                '<img src="'+coverSrc+'"><div>'+showBooks[i].title+'<span>Stored Locally</span></div></a>';
+                '<img src="'+coverSrc+'"><div>'+showBooks[i].title+'<span>Press Enter to Read</span></div></a>';
       }
-      if(showBooks.length === 0) {
-        html = '<div style="text-align:center;padding:25px;font-size:13px;opacity:0.5;">Shelf is empty.</div>';
-      }
+      if(showBooks.length === 0) html = '<div style="text-align:center;padding:25px;font-size:13px;opacity:0.5;">Shelf is empty.</div>';
       listEl.innerHTML = html;
     });
   }
 }
 
-/* --- WEB ASSET FETCH ENGINE --- */
+/* --- WEB ASSET FETCH ENGINE (Fixes Infinite Waiting) --- */
 function fetchWebBook(url, title) {
-  showLoading("Fetching " + title + " from Server...");
+  showLoading("Downloading " + title + "...");
   fetch(url)
     .then(function(res) {
-      if(!res.ok) throw new Error("Server transmission error");
+      if(!res.ok) throw new Error("Network/CORS block");
       return res.arrayBuffer();
     })
     .then(function(buf) {
       var id = "web-" + Date.now();
       DB.saveBook(id, title, "", buf, function() {
         showLoading(false);
-        alert(title + " successfully stored in Local Database!");
+        alert(title + " Saved! Check 'Local' tab.");
         renderHomeList('uploaded');
       });
     })
     .catch(function(err) {
       showLoading(false);
-      console.error(err);
-      alert("Download failed. CORS block active or network offline.");
+      alert("Download blocked or timeout. Try again.");
     });
 }
 
-/* --- INTEGRATED PROJECT GUTENBERG EXPLORER --- */
 function searchGutenberg() {
-  var query = prompt("Search Project Gutenberg Catalog:");
+  var query = document.getElementById('gutenbergQuery').value;
   if(!query) return;
-  showLoading("Searching Open Registries...");
+  showLoading("Searching Gutenberg...");
   
   fetch("https://gutendex.com/books/?search=" + encodeURIComponent(query))
     .then(function(res){ return res.json(); })
     .then(function(data){
       showLoading(false);
       if(!data.results || data.results.length === 0) {
-        alert("No public domain items matched your query.");
+        alert("No results found.");
         return;
       }
-      
       WEB_CATALOG = [];
       data.results.forEach(function(item) {
         var epubUrl = item.formats["application/epub+zip"];
         if(epubUrl) {
-          // Force proxy bypass on downloads to prevent standard origin blocks
-          var secureUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(epubUrl.replace(".images", ".noimages"));
+          // Wrapped securely through robust CORS tunnel for binary fetches
+          var secureUrl = "https://corsproxy.io/?url=" + encodeURIComponent(epubUrl.replace(".images", ".noimages"));
           WEB_CATALOG.push({
             title: item.title,
             url: secureUrl,
@@ -408,21 +404,19 @@ function searchGutenberg() {
           });
         }
       });
-      
-      toggleMenu();
       renderHomeList('web');
     })
     .catch(function(e){
       showLoading(false);
-      alert("Error reading registry catalog endpoint.");
+      alert("Error reading registry.");
     });
 }
 
-/* --- CORE MANIFEST PARSER & READER GENERATOR --- */
+/* --- CORE READER GENERATOR --- */
 function openBook(id) {
-  showLoading("Unpacking Core Layout...");
+  showLoading("Opening Book...");
   DB.getBookData(id, function(record) {
-    if(!record) { showLoading(false); alert("Database track missing."); return; }
+    if(!record) { showLoading(false); alert("File missing."); return; }
     Book.id = record.id;
     Book.title = record.title;
     
@@ -470,11 +464,11 @@ function openBook(id) {
         showLoading(false);
         document.getElementById('homeScreen').className = 'hidden';
         document.getElementById('readerScreen').className = '';
-        uiState = 'READER';
+        changeState('READER');
       });
     } catch(err) {
       showLoading(false);
-      alert("EPUB parsing failed: " + err.message);
+      alert("EPUB error: " + err.message);
     }
   });
 }
@@ -498,7 +492,6 @@ function loadSpineItem(index, cb) {
   var contentEl = document.getElementById('content');
   contentEl.innerHTML = bodyContent;
   
-  // Resolve broken dynamic binary resource links on images
   var currentBaseDir = dirName(path);
   var imgs = contentEl.getElementsByTagName('img');
   for(var i=0; i<imgs.length; i++) {
@@ -517,14 +510,10 @@ function loadSpineItem(index, cb) {
   
   currentPageIndex = 0;
   contentEl.style.transform = 'translateX(0px)';
-  
-  setTimeout(function() {
-    updateProgress();
-    if(cb) cb();
-  }, 120);
+  setTimeout(function() { updateProgress(); if(cb) cb(); }, 120);
 }
 
-/* --- THE ACCURATE COLUMN INTERACTION FLOWS --- */
+/* --- CLOUD PHONE HARDWARE PAGINATION ENGINE --- */
 function nextPage() {
   var contentEl = document.getElementById('content');
   var totalWidth = contentEl.scrollWidth;
@@ -535,11 +524,9 @@ function nextPage() {
     currentPageIndex++;
     contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
     updateProgress();
-  } else {
-    if (Book.currentIndex < Book.spine.length - 1) {
-      showLoading("Next Section...");
-      loadSpineItem(Book.currentIndex + 1, function() { showLoading(false); });
-    }
+  } else if (Book.currentIndex < Book.spine.length - 1) {
+    showLoading("Loading...");
+    loadSpineItem(Book.currentIndex + 1, function() { showLoading(false); });
   }
 }
 
@@ -551,18 +538,16 @@ function prevPage() {
     currentPageIndex--;
     contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
     updateProgress();
-  } else {
-    if (Book.currentIndex > 0) {
-      showLoading("Previous Section...");
-      loadSpineItem(Book.currentIndex - 1, function() {
-        var totalWidth = contentEl.scrollWidth;
-        var maxPages = Math.ceil(totalWidth / viewWidth);
-        currentPageIndex = Math.max(0, maxPages - 1);
-        contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
-        showLoading(false);
-        updateProgress();
-      });
-    }
+  } else if (Book.currentIndex > 0) {
+    showLoading("Loading...");
+    loadSpineItem(Book.currentIndex - 1, function() {
+      var totalWidth = contentEl.scrollWidth;
+      var maxPages = Math.ceil(totalWidth / viewWidth);
+      currentPageIndex = Math.max(0, maxPages - 1);
+      contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
+      showLoading(false);
+      updateProgress();
+    });
   }
 }
 
@@ -571,27 +556,26 @@ function updateProgress() {
   var totalWidth = contentEl.scrollWidth;
   var viewWidth = window.innerWidth;
   var maxPages = Math.ceil(totalWidth / viewWidth) || 1;
-  
   var chProgress = (Book.currentIndex / Math.max(1, Book.spine.length)) * 100;
   var pgProgress = (currentPageIndex / maxPages) * (100 / Math.max(1, Book.spine.length));
-  var totalProgress = Math.min(100, Math.floor(chProgress + pgProgress));
-  
-  var pBar = document.getElementById('progressBar');
-  pBar.className = '';
-  pBar.style.width = totalProgress + '%';
+  document.getElementById('progressBar').style.width = Math.min(100, Math.floor(chProgress + pgProgress)) + '%';
+  document.getElementById('progressBar').className = '';
 }
 
-/* --- NAVIGATION & INTERFACE lifecycle --- */
-function handleReaderTap(e) {
-  var x = e.clientX;
-  var w = window.innerWidth;
-  // Dynamic Tap Zone Boundaries: 25% Left/Right, Middle = Menu
-  if (x < w * 0.25) {
-    prevPage();
-  } else if (x > w * 0.75) {
-    nextPage();
-  } else {
-    toggleMenu();
+/* --- CLOUD PHONE FEATURE NAVIGATION & UTILS --- */
+function changeState(newState) {
+  previousUiState = uiState;
+  uiState = newState;
+}
+
+function goBack() {
+  if (uiState === 'MENU' || uiState === 'TOC' || uiState === 'NOTES') {
+    closeSecondaryScreen();
+  } else if (uiState === 'READER') {
+    closeBook();
+  } else if (uiState === 'HOME') {
+    // Top-level, let KaiOS/CloudMosa exit the app natively if needed
+    console.log("App root reached");
   }
 }
 
@@ -599,109 +583,145 @@ function toggleMenu() {
   var m = document.getElementById('menuOverlay');
   if(m.className === 'hidden') {
     m.className = '';
-    uiState = 'MENU';
+    changeState('MENU');
+    document.getElementById('menuFirstItem').focus();
   } else {
     m.className = 'hidden';
-    uiState = 'READER';
+    changeState('READER');
   }
+}
+
+function closeSecondaryScreen() {
+  document.getElementById('tocScreen').className = 'hidden';
+  document.getElementById('notesScreen').className = 'hidden';
+  document.getElementById('menuOverlay').className = 'hidden';
+  document.getElementById('readerScreen').className = '';
+  changeState('READER');
+}
+
+function closeBook() {
+  closeSecondaryScreen();
+  document.getElementById('readerScreen').className = 'hidden';
+  document.getElementById('progressBar').className = 'hidden';
+  document.getElementById('homeScreen').className = '';
+  changeState('HOME');
+  renderHomeList('recent');
 }
 
 function showTOCScreen() {
   document.getElementById('menuOverlay').className = 'hidden';
   var t = document.getElementById('tocScreen');
   t.className = '';
-  uiState = 'TOC';
+  changeState('TOC');
   
   var listEl = document.getElementById('tocList');
   var html = '';
   for(var i=0; i<Book.spine.length; i++) {
-    var path = Book.spine[i];
-    var segmentName = path.substring(path.lastIndexOf('/') + 1);
-    html += '<a href="#" onclick="jumpToSpine(' + i + ')">Chapter Section ' + (i + 1) + ' (' + segmentName + ')</a>';
+    html += '<a href="#" onclick="jumpToSpine(' + i + ')">Section ' + (i + 1) + '</a>';
   }
   listEl.innerHTML = html;
+  if(listEl.firstChild) listEl.firstChild.focus();
 }
 
 function jumpToSpine(idx) {
   closeSecondaryScreen();
-  showLoading("Jumping to Section...");
+  showLoading("Jumping...");
   loadSpineItem(idx, function() { showLoading(false); });
 }
 
 function showBookmarksScreen() {
   document.getElementById('menuOverlay').className = 'hidden';
   document.getElementById('notesScreen').className = '';
-  uiState = 'NOTES';
+  changeState('NOTES');
   
   DB.getNotes(Book.id, function(notes) {
     var listEl = document.getElementById('notesList');
     var html = '';
     notes.forEach(function(n) {
-      html += '<div style="padding:10px; border-bottom:1px solid rgba(128,128,128,0.2); font-size:13px;">' +
-              '<strong>Sec ' + (n.chapter + 1) + ', Page Offset ' + n.pageOffset + ':</strong> ' +
-              '<p style="margin:5px 0; font-style:italic;">' + n.text + '</p></div>';
+      html += '<a href="#" style="display:block; padding:10px; border-bottom:1px solid rgba(128,128,128,0.2); font-size:13px; text-decoration:none; color:inherit;">' +
+              '<strong>Sec ' + (n.chapter + 1) + ' (Pg ' + n.pageOffset + ')</strong><br>' + n.text + '</a>';
     });
-    if(notes.length === 0) html = '<div style="padding:20px; opacity:0.5; text-align:center;">No bookmarks saved here.</div>';
+    if(notes.length === 0) html = '<div style="padding:20px; text-align:center;">No bookmarks.</div>';
     listEl.innerHTML = html;
+    if(listEl.firstChild) listEl.firstChild.focus();
   });
 }
 
 function addBookmark() {
-  var sampleText = document.getElementById('content').innerText.substring(0, 60) + "...";
+  var sampleText = document.getElementById('content').innerText.substring(0, 40) + "...";
   DB.saveNote(Book.id, Book.currentIndex, currentPageIndex, sampleText, function() {
-    alert("Bookmark captured at present layout view column!");
+    alert("Bookmark Saved!");
     toggleMenu();
   });
 }
 
-function closeSecondaryScreen() {
-  document.getElementById('tocScreen').className = 'hidden';
-  document.getElementById('notesScreen').className = 'hidden';
-  document.getElementById('readerScreen').className = '';
-  uiState = 'READER';
-}
-
-function closeBook() {
-  document.getElementById('readerScreen').className = 'hidden';
-  document.getElementById('menuOverlay').className = 'hidden';
-  document.getElementById('tocScreen').className = 'hidden';
-  document.getElementById('notesScreen').className = 'hidden';
-  document.getElementById('progressBar').className = 'hidden';
-  document.getElementById('homeScreen').className = '';
-  uiState = 'HOME';
-  renderHomeList('recent');
-}
-
-/* --- THE TYPOGRAPHY ENGINE FIX --- */
+/* --- CLOUD PHONE HARDWARE TYPOGRAPHY & ROTATION --- */
 function adjustTextSize(delta) {
-  currentFontSize = Math.max(12, Math.min(36, currentFontSize + delta));
+  currentFontSize = Math.max(14, Math.min(36, currentFontSize + delta));
   var contentEl = document.getElementById('content');
   contentEl.style.fontSize = currentFontSize + 'px';
-  
-  // Re-paginate current column positions instantly to prevent layout breaking
   currentPageIndex = 0;
   contentEl.style.transform = 'translateX(0px)';
   updateProgress();
 }
 
-function setTheme(t) {
-  document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t);
+function setRotation(dir) {
+  var w = document.getElementById('wrapper');
+  if (dir === 'left') {
+    w.className = w.className === 'rotate-left' ? '' : 'rotate-left';
+  } else {
+    w.className = w.className === 'rotate-right' ? '' : 'rotate-right';
+  }
+  // Re-flow columns momentarily to adapt to viewport switch
+  setTimeout(function() { adjustTextSize(0); }, 300);
 }
 
-function setFontFam(f) {
-  document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f);
+function scrollScreen(amount) {
+  var active = null;
+  if (uiState === 'HOME') active = document.getElementById('homeScreen');
+  else if (uiState === 'MENU') active = document.getElementById('menuOverlay');
+  else if (uiState === 'TOC') active = document.getElementById('tocScreen');
+  else if (uiState === 'NOTES') active = document.getElementById('notesScreen');
+  
+  if (active) active.scrollTop += amount;
 }
 
-/* --- HARDWARE KEYMAPS & D-PAD OVERLAYS --- */
+function setTheme(t) { document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); }
+function setFontFam(f) { document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); }
+
+/* --- OFFICIAL HARDWARE LISTENER (KEYPAD / SOFT KEYS) --- */
 window.addEventListener('keydown', function(e) {
-  if (uiState === 'READER') {
-    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === '3') nextPage();
-    if (e.key === 'ArrowLeft' || e.key === '1') prevPage();
-    if (e.key === '0' || e.key === 'Enter') toggleMenu();
-  } else if (uiState === 'MENU') {
-    if (e.key === '0' || e.key === 'Escape') toggleMenu();
-  } else if (uiState === 'TOC' || uiState === 'NOTES') {
-    if (e.key === 'Escape') closeSecondaryScreen();
+  
+  // Back Navigation System (Right Top Button / Backspace / Escape on KaiOS/CloudPhone)
+  if (e.key === 'SoftRight' || e.key === 'Backspace' || e.key === 'Escape') {
+      if (uiState !== 'HOME') {
+          e.preventDefault(); 
+          goBack();
+          return;
+      }
+  }
+
+  // General App Hotkeys Map
+  switch (e.key) {
+    case '*': adjustTextSize(-2); break;
+    case '#': adjustTextSize(2); break;
+    case '1': setRotation('left'); break;
+    case '3': setRotation('right'); break;
+    case '5': 
+      if(uiState === 'READER' || uiState === 'MENU') toggleMenu(); 
+      break;
+    case '4': 
+      if (uiState === 'READER') prevPage(); 
+      break;
+    case '6': 
+      if (uiState === 'READER') nextPage(); 
+      break;
+    case '2': 
+      if (uiState !== 'READER') scrollScreen(-60); 
+      break;
+    case '8': 
+      if (uiState !== 'READER') scrollScreen(60); 
+      break;
   }
 });
 </script>
