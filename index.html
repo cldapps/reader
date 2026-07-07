@@ -103,7 +103,7 @@ input[type=file] { display:none; }
 }
 .book-card img {
     width: 100%;
-    aspect-ratio: 2 / 3;
+    aspect-ratio: 3 / 4;
     object-fit: cover;
     background: var(--bg-color);
     border: 1px solid var(--border-color);
@@ -238,7 +238,7 @@ input[type=file] { display:none; }
 
 <div id="menuOverlay" class="hidden">
   <div class="menu-header">Menu Options</div>
-  <a href="#" class="menu-item" id="menuFirstItem" onclick="navigate('READER');">Resume Reading</a>
+  <a href="#" class="menu-item" id="menuFirstItem" onclick="history.back();">Resume Reading</a>
   <a href="#" class="menu-item" onclick="closeBook();">Exit to Library</a>
   
   <div class="menu-header">Tools</div>
@@ -392,6 +392,15 @@ function applyScreenState(state) {
         document.getElementById('progressBar').className = '';
         document.getElementById('readerFooter').className = '';
         updateReaderWidthVar();
+        // READER always means "the current book at its current position" --
+        // re-render it here so every navigate('READER') call (menu actions,
+        // TOC jumps, bookmark jumps, resume, back/forward navigation) converges
+        // on the correct chapter/page instead of relying on whoever navigated
+        // away to have left the DOM in the right state.
+        if (Book.id && Book.spine.length > 0) {
+            document.getElementById('content').style.fontSize = currentFontSize + 'px';
+            loadSpineItem(Book.currentIndex, currentPageIndex, function() { showLoading(false); });
+        }
     } else if (state === 'MENU') {
         document.getElementById('readerScreen').className = ''; 
         document.getElementById('menuOverlay').className = '';
@@ -797,10 +806,9 @@ function showTOCScreen() {
 
 function jumpToSpine(idx) {
   showLoading("Jumping...");
-  navigate('READER');
-  setTimeout(function() {
-      loadSpineItem(idx, 0, function() { showLoading(false); });
-  }, 50);
+  Book.currentIndex = idx;
+  currentPageIndex = 0;
+  history.back();
 }
 
 function showBookmarksScreen() {
@@ -825,17 +833,16 @@ function showBookmarksScreen() {
 
 function jumpToBookmark(ch, pg) {
   showLoading("Jumping...");
-  navigate('READER');
-  setTimeout(function() {
-      loadSpineItem(ch, pg, function() { showLoading(false); });
-  }, 50);
+  Book.currentIndex = ch;
+  currentPageIndex = pg;
+  history.back();
 }
 
 function addBookmark() {
   var sampleText = document.getElementById('content').innerText.substring(0, 50).trim() + "...";
   DB.saveNote(Book.id, Book.currentIndex, currentPageIndex, sampleText, function() {
     alert("Bookmark Saved!");
-    navigate('READER');
+    history.back();
   });
 }
 
@@ -889,13 +896,13 @@ function scrollScreen(amount) {
 function setTheme(t) { 
   localStorage.setItem('epub_theme', t);
   document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); 
-  navigate('READER'); 
+  history.back(); 
 }
 function setFontFam(f) { 
   localStorage.setItem('epub_font', f);
   document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); 
   setTimeout(function() { adjustTextSize(0); }, 50); 
-  navigate('READER'); 
+  history.back(); 
 }
 
 /* --- OFFICIAL HARDWARE LISTENER (RESTORED D-PAD & CYCLING) --- */
