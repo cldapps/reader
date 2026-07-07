@@ -67,6 +67,9 @@ a:focus *, button:focus *, .book-card:focus * {
     border-bottom: 1px solid var(--border-color); padding-bottom: 10px; 
     text-transform: uppercase; letter-spacing: 1px; 
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg-color);
+    padding-top: 2px;
 }
 
 .tab-bar { display:flex; border-bottom:1px solid var(--border-color); margin-bottom:12px; }
@@ -103,7 +106,7 @@ input[type=file] { display:none; }
 }
 .book-card img {
     width: 100%;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 4 / 4.6;
     object-fit: cover;
     background: var(--bg-color);
     border: 1px solid var(--border-color);
@@ -164,6 +167,8 @@ input[type=file] { display:none; }
     background:var(--bg-color); color:var(--fg-color); z-index:1000; overflow-y:auto; 
 }
 .menu-item { display:block; padding:14px 12px; border-bottom:1px solid var(--border-color); color:inherit; text-decoration:none; font-size:13px; font-weight:400;}
+.menu-item-danger { font-weight: 500; letter-spacing: 0.5px; }
+.menu-item-danger::before { content: "\26A0  "; }
 .menu-header { font-size:11px; color:var(--fg-color); padding:20px 12px 6px 12px; font-weight:500; text-transform:uppercase; letter-spacing:1px; border-bottom: 1px solid var(--border-color); }
 
 /* --- NUMBERED TOC: compact 13px, sequential numbering --- */
@@ -256,6 +261,9 @@ input[type=file] { display:none; }
   <a href="#" class="menu-item" onclick="setFontFam('sans-en');">Roboto (Sans)</a>
   <a href="#" class="menu-item" onclick="setFontFam('serif-bn');">Tiro Bangla (BN)</a>
   <a href="#" class="menu-item" onclick="setFontFam('sans-bn');">Hind Siliguri (BN)</a>
+
+  <div class="menu-header">Danger Zone</div>
+  <a href="#" class="menu-item menu-item-danger" onclick="confirmDeleteBook();">Delete This Book</a>
 </div>
 
 <div id="progressBar" class="hidden"></div>
@@ -313,6 +321,22 @@ var DB = (function() {
     getNotes: function(bookId, cb) {
       var req = db.transaction('notes', 'readonly').objectStore('notes').getAll();
       req.onsuccess = function(e) { cb(e.target.result.filter(function(n){ return n.bookId === bookId; })); };
+    },
+    deleteBook: function(bookId, cb) {
+      // Remove the book record itself, plus every bookmark/note that
+      // references it, so no orphaned data is left behind in IndexedDB.
+      var notesReq = db.transaction('notes', 'readonly').objectStore('notes').getAll();
+      notesReq.onsuccess = function(e) {
+        var toDelete = e.target.result.filter(function(n){ return n.bookId === bookId; });
+        var notesTx = db.transaction('notes', 'readwrite');
+        var notesStore = notesTx.objectStore('notes');
+        toDelete.forEach(function(n) { notesStore.delete(n.noteId); });
+        notesTx.oncomplete = function() {
+          var booksTx = db.transaction('books', 'readwrite');
+          booksTx.objectStore('books').delete(bookId);
+          booksTx.oncomplete = function() { if(cb) cb(); };
+        };
+      };
     }
   };
 })();
@@ -399,7 +423,9 @@ function applyScreenState(state) {
         // away to have left the DOM in the right state.
         if (Book.id && Book.spine.length > 0) {
             document.getElementById('content').style.fontSize = currentFontSize + 'px';
-            loadSpineItem(Book.currentIndex, currentPageIndex, function() { showLoading(false); });
+            var target = pendingReaderTarget !== null ? pendingReaderTarget : currentPageIndex;
+            pendingReaderTarget = null;
+            loadSpineItem(Book.currentIndex, target, function() { showLoading(false); });
         }
     } else if (state === 'MENU') {
         document.getElementById('readerScreen').className = ''; 
@@ -417,7 +443,9 @@ function applyScreenState(state) {
 var Book = { id: null, zip: null, spine: [], tocMap: {}, currentIndex: 0, title: '', baseDir: '' };
 var currentFontSize = 18;
 var currentTab = 'recent';
+var GRID_COLS = 3; // must match the number of columns in .book-card CSS (width: calc((100% - 20px) / 3))
 var currentPageIndex = 0;
+var pendingReaderTarget = null; // set by jumpToBookmark/jumpToSpine to override the next READER render
 
 function showLoading(text) { 
   var l = document.getElementById('loading');
@@ -687,11 +715,17 @@ function loadSpineItem(index, targetPage, cb) {
   setTimeout(function() { 
       updateReaderWidthVar();
       var viewWidth = getViewWidth();
+      var totalWidth = contentEl.scrollWidth;
+      var maxPages = Math.ceil(totalWidth / viewWidth);
       
       if (targetPage === -1) {
-          var totalWidth = contentEl.scrollWidth;
-          var maxPages = Math.ceil(totalWidth / viewWidth);
           currentPageIndex = Math.max(0, maxPages - 1);
+      } else if (targetPage && typeof targetPage === 'object' && typeof targetPage.ratio === 'number') {
+          // Percentage-based target (e.g. from a bookmark): resolve the ratio
+          // against the ACTUAL page count at the current font size/orientation,
+          // so it lands in the same relative spot even if those have changed
+          // since the bookmark was saved.
+          currentPageIndex = Math.min(maxPages - 1, Math.max(0, Math.round(targetPage.ratio * maxPages)));
       } else {
           currentPageIndex = targetPage || 0;
       }
@@ -785,6 +819,25 @@ function closeBook() {
   Book.id = null; 
 }
 
+function confirmDeleteBook() {
+  if (!Book.id) return;
+  var bookTitle = Book.title || 'this book';
+  var sure = confirm('Delete "' + bookTitle + '" from this device? This also removes its bookmarks. This cannot be undone.');
+  if (!sure) return;
+
+  showLoading("Deleting...");
+  var deletedId = Book.id;
+  DB.deleteBook(deletedId, function() {
+    showLoading(false);
+    Book.id = null;
+    Book.zip = null;
+    Book.spine = [];
+    Book.tocMap = {};
+    Book.title = '';
+    navigate('HOME');
+  });
+}
+
 function showTOCScreen() {
   var listEl = document.getElementById('tocList');
   var html = '';
@@ -807,8 +860,8 @@ function showTOCScreen() {
 function jumpToSpine(idx) {
   showLoading("Jumping...");
   Book.currentIndex = idx;
-  currentPageIndex = 0;
-  history.back();
+  pendingReaderTarget = 0;
+  navigate('READER');
 }
 
 function showBookmarksScreen() {
@@ -818,8 +871,9 @@ function showBookmarksScreen() {
     notes.forEach(function(n) {
       var spinePath = Book.spine[n.chapter];
       var chTitle = Book.tocMap[spinePath] || ('Chapter ' + (n.chapter + 1));
+      var pct = Math.round((n.pageOffset || 0) * 100);
       html += '<a href="#" class="menu-item" onclick="jumpToBookmark(' + n.chapter + ', ' + n.pageOffset + ')">' +
-              '<strong>' + chTitle + ' (Pg ' + (n.pageOffset + 1) + ')</strong><br>' + 
+              '<strong>' + chTitle + ' (' + pct + '%)</strong><br>' + 
               '<span style="opacity:0.7;font-size:11px;display:block;margin-top:4px;">' + n.text + '</span></a>';
     });
     if(notes.length === 0) html = '<div style="padding:25px; text-align:center; opacity:0.6; font-size:12px;">No bookmarks added.</div>';
@@ -831,16 +885,21 @@ function showBookmarksScreen() {
   });
 }
 
-function jumpToBookmark(ch, pg) {
+function jumpToBookmark(ch, ratio) {
   showLoading("Jumping...");
   Book.currentIndex = ch;
-  currentPageIndex = pg;
-  history.back();
+  pendingReaderTarget = { ratio: ratio };
+  navigate('READER');
 }
 
 function addBookmark() {
-  var sampleText = document.getElementById('content').innerText.substring(0, 50).trim() + "...";
-  DB.saveNote(Book.id, Book.currentIndex, currentPageIndex, sampleText, function() {
+  var contentEl = document.getElementById('content');
+  var sampleText = contentEl.innerText.substring(0, 50).trim() + "...";
+  var viewWidth = getViewWidth();
+  var totalWidth = contentEl.scrollWidth;
+  var maxPages = Math.ceil(totalWidth / viewWidth) || 1;
+  var pageRatio = maxPages > 1 ? (currentPageIndex / maxPages) : 0;
+  DB.saveNote(Book.id, Book.currentIndex, pageRatio, sampleText, function() {
     alert("Bookmark Saved!");
     history.back();
   });
@@ -918,10 +977,33 @@ window.addEventListener('keydown', function(e) {
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevPage(); return; }
   }
 
+  if (uiState === 'HOME' && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      // TRUE GRID NAVIGATION for the library: left/right move within a row,
+      // up/down jump by a full row (GRID_COLS items) instead of walking the
+      // flat DOM list one item at a time like a single-column list would.
+      e.preventDefault();
+      var listEl = document.getElementById('homeList');
+      var cards = Array.prototype.slice.call(listEl.querySelectorAll('.book-card')).filter(function(el) {
+          return el.offsetWidth > 0 || el.offsetHeight > 0;
+      });
+      if (cards.length > 0) {
+          var idx = cards.indexOf(document.activeElement);
+          if (idx === -1) { cards[0].focus(); }
+          else {
+              var next = idx;
+              if (e.key === 'ArrowRight') next = Math.min(cards.length - 1, idx + 1);
+              else if (e.key === 'ArrowLeft') next = Math.max(0, idx - 1);
+              else if (e.key === 'ArrowDown') next = Math.min(cards.length - 1, idx + GRID_COLS);
+              else if (e.key === 'ArrowUp') next = Math.max(0, idx - GRID_COLS);
+              cards[next].focus();
+          }
+      }
+      return;
+  }
+
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       var container;
-      if (uiState === 'HOME') container = document.getElementById('homeScreen');
-      else if (uiState === 'MENU') container = document.getElementById('menuOverlay');
+      if (uiState === 'MENU') container = document.getElementById('menuOverlay');
       else if (uiState === 'TOC') container = document.getElementById('tocScreen');
       else if (uiState === 'NOTES') container = document.getElementById('notesScreen');
       
