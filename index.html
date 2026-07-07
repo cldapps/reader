@@ -6,42 +6,16 @@
 <title>Cloud Phone EPUB Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Hind+Siliguri:wght@300;400&family=Merriweather:wght@300;400&family=Roboto:wght@300;400&family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Hind+Siliguri:wght@400;600&family=Merriweather:wght@400;700&family=Roboto:wght@400;700&family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
 
 <style>
-/* --- PURE TWO-TONE THEMING SYSTEM --- */
-:root {
-    --bg-color: #ffffff;
-    --fg-color: #000000;
-    --border-color: #000000;
-}
+/* --- GLOBAL STYLES & THEMING --- */
+:root { --reader-width: 100vw; }
+html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 
-body.theme-light {
-    --bg-color: #ffffff;
-    --fg-color: #000000;
-    --border-color: #000000;
-}
-
-body.theme-dark {
-    --bg-color: #000000;
-    --fg-color: #ffffff;
-    --border-color: #ffffff;
-}
-
-body.theme-sepia {
-    --bg-color: #f4ecd8;
-    --fg-color: #3a2e22;
-    --border-color: #3a2e22;
-}
-
-/* --- GLOBAL STYLES (Modern, Thin, Professional) --- */
-html, body { 
-    margin:0; padding:0; width:100%; height:100%; overflow:hidden; 
-    font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-    font-weight: 300; /* Thin base font */
-    background: var(--bg-color); 
-    color: var(--fg-color); 
-}
+body.theme-light { background:#f9fafb; color:#111827; }
+body.theme-sepia { background:#f4ecd8; color:#3a2e22; }
+body.theme-dark { background:#111827; color:#e5e7eb; }
 
 .font-default #content { font-family: inherit; }
 .font-serif-en #content { font-family: 'Merriweather', Georgia, serif !important; }
@@ -49,51 +23,32 @@ html, body {
 .font-serif-bn #content { font-family: 'Tiro Bangla', 'Kalpurush', serif !important; }
 .font-sans-bn #content { font-family: 'Hind Siliguri', 'Siyam Rupali', sans-serif !important; }
 
-/* SPATIAL NAVIGATION FOCUS STATES (D-PAD) - Inverted for two-tone clarity */
-a:focus, button:focus, input:focus, .book-card:focus, .tab-btn:focus, .menu-item:focus {
-    outline: none !important; 
-    background-color: var(--fg-color) !important;
-    color: var(--bg-color) !important;
+/* SPATIAL NAVIGATION FOCUS STATES (D-PAD) */
+a:focus, button:focus, input:focus, .tab-btn:focus, .menu-item:focus {
+    outline: 2px solid #3b82f6 !important; 
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    border-radius: 6px;
 }
 
-a:focus *, button:focus *, .book-card:focus * {
-    color: var(--bg-color) !important;
-}
+/* --- UI SCREENS --- */
+#homeScreen, #tocScreen, #notesScreen { padding:15px; box-sizing:border-box; width:100%; height:100%; overflow-y:auto; }
+.home-header { font-size:14px; margin:0 0 12px 0; font-weight:700; text-align:center; border-bottom: 1px solid rgba(128,128,128,0.2); padding-bottom: 8px; letter-spacing: -0.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height: 16px; transition: color 0.2s; }
 
-/* --- UNIFORM UI SCREENS --- */
-#homeScreen, #tocScreen, #notesScreen { padding:12px; box-sizing:border-box; width:100%; height:100%; overflow-y:auto; }
+.tab-bar { display:flex; border-bottom:1px solid rgba(128,128,128,0.2); margin-bottom:15px; }
+.tab-btn { flex:1; padding:10px 0; text-align:center; background:none; border:none; font-size:13px; font-weight:600; color:inherit; opacity:0.5; text-decoration:none; cursor:pointer; border-bottom: 2px solid transparent;}
+.tab-btn.active { border-bottom:2px solid #3b82f6; color: #3b82f6; opacity:1; }
 
-.home-header { 
-    font-size: 14px; margin: 0 0 12px 0; font-weight: 400; text-align: center; 
-    border-bottom: 1px solid var(--border-color); padding-bottom: 10px; 
-    text-transform: uppercase; letter-spacing: 1px; 
-}
-
-.tab-bar { display:flex; border-bottom:1px solid var(--border-color); margin-bottom:12px; }
-.tab-btn { 
-    flex:1; padding:10px 0; text-align:center; background:none; border:none; 
-    font-size:12px; font-weight:400; color:inherit; text-decoration:none; cursor:pointer; 
-    border-bottom: 1px solid transparent; text-transform: uppercase; letter-spacing: 0.5px;
-}
-.tab-btn.active { border-bottom: 1px solid var(--fg-color); font-weight: 500; }
-
-.action-btn { 
-    display:block; padding:12px; background:transparent; color:var(--fg-color); 
-    text-align:center; text-decoration:none; border:1px solid var(--border-color); 
-    margin-bottom:15px; font-size:12px; font-weight:400; text-transform: uppercase; letter-spacing: 0.5px;
-}
+.action-btn { display:block; padding:12px; background:#3b82f6; color:#ffffff; text-align:center; text-decoration:none; border:none; margin-bottom:15px; font-size:14px; font-weight:600; border-radius:6px; box-shadow: 0 2px 4px rgba(59,130,246,0.3); }
 input[type=file] { display:none; }
 
-.book-card { 
-    display:flex; text-decoration:none; color:inherit; border:1px solid var(--border-color); 
-    padding:8px; margin-bottom:8px; align-items:center; background:transparent; 
-}
-.book-card img { 
-    width:48px; height:68px; object-fit:cover; margin-right:12px; 
-    background:var(--bg-color); border: 1px solid var(--border-color); box-sizing: border-box;
-}
-.book-card div { font-size:14px; font-weight:400; line-height:1.4; }
-.book-card span { display:block; font-size:11px; font-weight:300; margin-top:4px; }
+/* --- LIBRARY GRID --- */
+#homeList { display: flex; flex-wrap: wrap; justify-content: flex-start; padding: 5px 0; gap: 12px 3.5%; }
+.book-card { display:flex; flex-direction:column; width:31%; text-decoration:none; color:inherit; border:none; padding:0; margin:0; align-items:center; background:transparent; box-shadow:none; border-radius:0; }
+.book-card:focus { outline:none !important; background-color:transparent !important; }
+.book-card img { width:100%; aspect-ratio:2/3; object-fit:cover; margin:0; background:#e5e7eb; border-radius:4px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); border: 2px solid transparent; }
+.book-card:focus img, .book-card:hover img { border: 2px solid #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); }
+.book-card div { font-size:11px; font-weight:600; line-height:1.2; width:100%; text-align:center; margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.book-card span { display:none; }
 
 /* --- PAGINATED READER --- */
 #wrapper { 
@@ -103,16 +58,16 @@ input[type=file] { display:none; }
     box-sizing: border-box;
 }
 
-#wrapper.rotate-left { width: 100vh; height: 100vw; top: 100vh; left: 0; transform-origin: 0 0; transform: rotate(-90deg); }
-#wrapper.rotate-right { width: 100vh; height: 100vw; top: 0; left: 100vw; transform-origin: 0 0; transform: rotate(90deg); }
+#wrapper.rotate-left { width: 100vh; height: 100vw; top: 100vh; left: 0; transform-origin: 0 0; transform: rotate(-90deg); --reader-width: 100vh; }
+#wrapper.rotate-right { width: 100vh; height: 100vw; top: 0; left: 100vw; transform-origin: 0 0; transform: rotate(90deg); --reader-width: 100vh; }
 
 #readerScreen { width:100%; height:100%; overflow:hidden; position:relative; }
 
 #content { 
-    height: calc(100% - 32px); 
-    margin: 10px 10px 22px 10px;
+    height: calc(100% - 38px); 
+    margin: 10px 10px 28px 10px;
     box-sizing: border-box; 
-    column-width: calc(100vw - 20px); 
+    column-width: calc(var(--reader-width) - 20px); 
     column-gap: 20px; 
     column-fill: auto;
     word-wrap: break-word;
@@ -120,35 +75,29 @@ input[type=file] { display:none; }
     text-align: left; 
     line-height: 1.6;
 }
+#content img, #content svg { max-width:100%; height:auto; max-height:calc(100vh - 50px); object-fit:contain; display:block; margin: 5px auto; }
 
-#content img, #content svg { max-width:100%; height:auto; max-height:calc(100vh - 40px); object-fit:contain; display:block; margin: 5px auto; }
-
-#readerFooter { 
-    position:fixed; bottom:2px; left:0; width:100%; height:20px; display:flex; 
-    justify-content:space-between; align-items:center; padding:0 10px; 
-    box-sizing:border-box; font-size:10px; font-weight:400; z-index:998; 
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; 
-}
+#readerFooter { position:fixed; bottom:4px; left:0; width:100%; height:24px; display:flex; justify-content:space-between; align-items:center; padding:0 12px; box-sizing:border-box; font-size:11px; font-weight:500; opacity:0.6; z-index:998; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #chapterTitleDisplay { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 80%; }
-#progressBar { position:fixed; bottom:0; left:0; height:2px; background:var(--fg-color); width:0%; z-index:999; }
+#progressBar { position:fixed; bottom:0; left:0; height:4px; background:#3b82f6; width:0%; z-index:999; border-radius: 0 2px 2px 0; }
 
 /* --- MENUS --- */
-#menuOverlay { 
-    position:fixed; top:0; left:0; width:100%; height:100%; 
-    background:var(--bg-color); color:var(--fg-color); z-index:1000; overflow-y:auto; 
-}
-.menu-item { display:block; padding:14px 12px; border-bottom:1px solid var(--border-color); color:inherit; text-decoration:none; font-size:13px; font-weight:400;}
-.menu-header { font-size:11px; color:var(--fg-color); padding:20px 12px 6px 12px; font-weight:500; text-transform:uppercase; letter-spacing:1px; border-bottom: 1px solid var(--border-color); }
+#menuOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:inherit; color:inherit; z-index:1000; overflow-y:auto; }
+.menu-item { display:block; padding:16px; border-bottom:1px solid rgba(128,128,128,0.15); color:inherit; text-decoration:none; font-size:15px; font-weight:500;}
+.menu-header { font-size:12px; color:#3b82f6; padding:20px 16px 6px 16px; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
 
-#tocList a { display:block; padding:12px; border-bottom:1px solid var(--border-color); color:inherit; text-decoration:none; font-size:13px; }
-#tocList a.active-chapter { font-weight:500; border-left: 3px solid var(--fg-color); padding-left: 9px;}
+#tocList a { display:block; padding:10px 14px; border-bottom:1px solid rgba(128,128,128,0.15); color:inherit; text-decoration:none; font-size:13px; font-weight:400; }
+#tocList a.active-chapter { font-weight:700; color:#3b82f6; background:rgba(59,130,246,0.05); }
 
 #loading { 
-    padding:16px; font-size:12px; text-align:center; 
+    padding:16px; font-size:14px; text-align:center; 
     position:fixed; top:50%; left:50%; transform: translate(-50%, -50%);
-    width:70%; font-weight:400; text-transform:uppercase; letter-spacing: 1px; z-index:2000; 
-    background:var(--bg-color); color:var(--fg-color); border: 1px solid var(--border-color);
+    width:70%; font-weight:600; z-index:2000; 
+    box-shadow:0 10px 25px rgba(0,0,0,0.2); border-radius:8px; box-sizing: border-box;
 }
+body.theme-light #loading { background:#ffffff; color:#111827; border: 1px solid rgba(0,0,0,0.1);}
+body.theme-dark #loading { background:#1f2937; color:#f9fafb; border: 1px solid rgba(255,255,255,0.1);}
+body.theme-sepia #loading { background:#f4ecd8; color:#3a2e22; border: 1px solid rgba(58,46,34,0.2);}
 
 .hidden { display:none !important; }
 </style>
@@ -157,7 +106,7 @@ input[type=file] { display:none; }
 
 <div id="wrapper">
   <div id="homeScreen">
-    <div class="home-header">My Library</div>
+    <div class="home-header" id="mainHomeHeader">My Library</div>
     
     <div class="tab-bar">
       <a href="#" class="tab-btn active" id="tabBtn-recent" onclick="renderHomeList('recent')">Recent</a>
@@ -205,10 +154,10 @@ input[type=file] { display:none; }
   
   <div class="menu-header">Typography</div>
   <a href="#" class="menu-item" onclick="setFontFam('default');">Publisher Default</a>
-  <a href="#" class="menu-item" onclick="setFontFam('serif-en');">Merriweather (Serif)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('sans-en');">Roboto (Sans)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('serif-bn');">Tiro Bangla (BN)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('sans-bn');">Hind Siliguri (BN)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('serif-en');">Merriweather (EN Serif)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('sans-en');">Roboto (EN Sans)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('serif-bn');">Tiro Bangla (BN Serif)</a>
+  <a href="#" class="menu-item" onclick="setFontFam('sans-bn');">Hind Siliguri (BN Sans)</a>
 </div>
 
 <div id="progressBar" class="hidden"></div>
@@ -239,12 +188,7 @@ var DB = (function() {
       var req = store.get(id);
       req.onsuccess = function(e) {
         var rec = e.target.result;
-        if(rec) { 
-            rec.lastRead = Date.now(); 
-            rec.lastChapter = chapter; 
-            rec.lastPage = page; 
-            store.put(rec); 
-        }
+        if(rec) { rec.lastRead = Date.now(); rec.lastChapter = chapter; rec.lastPage = page; store.put(rec); }
       };
     },
     getBooksList: function(cb) {
@@ -374,9 +318,12 @@ function loadSettings() {
   var fSize = localStorage.getItem('epub_fontsize');
   
   document.body.className = 'theme-' + theme + ' font-' + font;
-  if (fSize) {
-      currentFontSize = parseInt(fSize, 10);
-  }
+  if (fSize) { currentFontSize = parseInt(fSize, 10); }
+}
+
+function getViewWidth() {
+  var w = document.getElementById('wrapper');
+  return (w.className.indexOf('rotate') !== -1) ? window.innerHeight : window.innerWidth;
 }
 
 function initApp() {
@@ -391,7 +338,7 @@ function setupFileUploadListener() {
   document.getElementById('fileInput').addEventListener('change', function(e) {
     var file = e.target.files[0];
     if(!file) return;
-    showLoading("Extracting...");
+    showLoading("Extracting EPUB...");
     var r = new FileReader();
     r.onload = function(evt) {
       var arrBuf = evt.target.result;
@@ -406,22 +353,20 @@ function setupFileUploadListener() {
         var title = titleMatch ? titleMatch[1] : file.name.replace('.epub','');
         var bookId = 'local-' + Date.now();
         
-        // --- SMART COVER EXTRACTION ---
+        // Smart Cover Extraction
         var coverPath = null;
         var coverIdMatch = opfStr.match(/<meta\s+name="cover"\s+content="([^"]+)"/i);
         var coverId = coverIdMatch ? coverIdMatch[1] : null;
 
         var epub3CoverMatch = opfStr.match(/<item\s+[^>]*properties="cover-image"[^>]*href="([^"]+)"/i) || opfStr.match(/<item\s+[^>]*href="([^"]+)"[^>]*properties="cover-image"/i);
         
-        if (epub3CoverMatch) {
-            coverPath = epub3CoverMatch[1];
-        } else if (coverId) {
+        if (epub3CoverMatch) coverPath = epub3CoverMatch[1];
+        else if (coverId) {
             var idRegex1 = new RegExp('<item\\s+[^>]*id="' + coverId + '"\\s+[^>]*href="([^"]+)"', 'i');
             var idRegex2 = new RegExp('<item\\s+[^>]*href="([^"]+)"\\s+[^>]*id="' + coverId + '"', 'i');
             var idMatch = opfStr.match(idRegex1) || opfStr.match(idRegex2);
             if (idMatch) coverPath = idMatch[1];
         }
-
         if (!coverPath) {
              var fallbackMatch = opfStr.match(/<item\s+[^>]*href="([^"]*cover[^"]*\.(jpg|jpeg|png))"/i);
              if (fallbackMatch) coverPath = fallbackMatch[1];
@@ -452,14 +397,21 @@ function setupFileUploadListener() {
   });
 }
 
-/* --- TABS & LIBRARY VIEW --- */
+function updateHomeHeader(title) {
+    var h = document.getElementById('mainHomeHeader');
+    h.innerText = title || "My Library";
+    h.style.color = title ? '#3b82f6' : 'inherit';
+}
+
+/* --- TABS & LIBRARY VIEW (GRID) --- */
 function renderHomeList(tabId) {
   currentTab = tabId;
   document.getElementById('tabBtn-recent').className = 'tab-btn' + (tabId==='recent'?' active':'');
   document.getElementById('tabBtn-uploaded').className = 'tab-btn' + (tabId==='uploaded'?' active':'');
+  updateHomeHeader('My Library');
   
   var listEl = document.getElementById('homeList');
-  listEl.innerHTML = '<div style="text-align:center;padding:10px;font-size:12px;opacity:0.6;">Loading...</div>';
+  listEl.innerHTML = '<div style="text-align:center;width:100%;padding:10px;font-size:13px;opacity:0.5;">Loading...</div>';
 
   DB.getBooksList(function(books) {
     var showBooks = books;
@@ -467,10 +419,16 @@ function renderHomeList(tabId) {
     var html = '';
     for(var i=0; i<showBooks.length; i++) {
       var coverSrc = showBooks[i].cover || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-      html += '<a href="#" class="book-card" onclick="openBook(\''+showBooks[i].id+'\')">' +
-              '<img src="'+coverSrc+'"><div>'+showBooks[i].title+'<span>Press Enter to Read</span></div></a>';
+      var safeTitle = showBooks[i].title.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+      html += '<a href="#" class="book-card" data-title="'+safeTitle+'" ' +
+              'onfocus="updateHomeHeader(this.dataset.title)" ' +
+              'onmouseover="updateHomeHeader(this.dataset.title)" ' +
+              'onblur="updateHomeHeader(\'My Library\')" ' +
+              'onmouseout="updateHomeHeader(\'My Library\')" ' +
+              'onclick="openBook(\''+showBooks[i].id+'\')">' +
+              '<img src="'+coverSrc+'"><div>'+showBooks[i].title+'</div></a>';
     }
-    if(showBooks.length === 0) html = '<div style="text-align:center;padding:25px;font-size:12px;opacity:0.6;">Shelf is empty.</div>';
+    if(showBooks.length === 0) html = '<div style="text-align:center;width:100%;padding:25px;font-size:14px;opacity:0.5;">Shelf is empty.</div>';
     listEl.innerHTML = html;
   });
 }
@@ -489,10 +447,8 @@ function openBook(id) {
       var containerStr = utf8Decode(Book.zip.getFile('META-INF/container.xml'));
       var opfPath = containerStr.match(/full-path="([^"]+)"/)[1];
       Book.baseDir = dirName(opfPath);
-      
       var opfStr = utf8Decode(Book.zip.getFile(opfPath));
       
-      // Extract TOC Headings 
       var navHtmlMatch = opfStr.match(/<item\s+[^>]*properties="nav"[^>]*href="([^"]+)"/i) || opfStr.match(/<item\s+[^>]*href="([^"]+)"[^>]*properties="nav"/i);
       var ncxMatch = opfStr.match(/<item\s+[^>]*id="ncx"\s+href="([^"]+)"/i) || opfStr.match(/<item\s+[^>]*href="([^"]+)"\s+id="ncx"/i);
       
@@ -523,7 +479,6 @@ function openBook(id) {
           }
       }
 
-      // Extract Spine Order
       Book.spine = [];
       var idrefs = [], match;
       var itemrefRegex = /<itemref\s+idref="([^"]+)"/gi;
@@ -532,7 +487,6 @@ function openBook(id) {
       var manifest = {};
       var itemRegex = /<item\s+[^>]*id="([^"]+)"\s+href="([^"]+)"/gi;
       while((match = itemRegex.exec(opfStr)) !== null) { manifest[match[1]] = match[2]; }
-      
       var itemRegexAlt = /<item\s+[^>]*href="([^"]+)"\s+id="([^"]+)"/gi;
       while((match = itemRegexAlt.exec(opfStr)) !== null) { manifest[match[2]] = match[1]; }
       
@@ -582,10 +536,8 @@ function loadSpineItem(index, targetPage, cb) {
   
   var contentEl = document.getElementById('content');
   contentEl.innerHTML = bodyContent;
-  
   var currentBaseDir = dirName(path);
 
-  // Helper to convert Image Refs to base64
   function processImageRef(el, src, isSvg) {
       if(!src) return;
       var cleanSrc = src.split('#')[0];
@@ -599,33 +551,24 @@ function loadSpineItem(index, targetPage, cb) {
           if(isSvg) {
               el.setAttribute('href', b64);
               el.setAttributeNS('http://www.w3.org/1999/xlink', 'href', b64);
-          } else {
-              el.src = b64;
-          }
+          } else { el.src = b64; }
       }
   }
 
   var imgs = contentEl.getElementsByTagName('img');
-  for(var i=0; i<imgs.length; i++) {
-      processImageRef(imgs[i], imgs[i].getAttribute('src'), false);
-  }
-  
+  for(var i=0; i<imgs.length; i++) { processImageRef(imgs[i], imgs[i].getAttribute('src'), false); }
   var svgImgs = contentEl.getElementsByTagName('image');
-  for(var i=0; i<svgImgs.length; i++) {
-      processImageRef(svgImgs[i], svgImgs[i].getAttribute('href') || svgImgs[i].getAttribute('xlink:href'), true);
-  }
+  for(var i=0; i<svgImgs.length; i++) { processImageRef(svgImgs[i], svgImgs[i].getAttribute('href') || svgImgs[i].getAttribute('xlink:href'), true); }
   
   setTimeout(function() { 
-      var viewWidth = window.innerWidth;
-      
+      var viewWidth = getViewWidth();
       if (targetPage === -1) {
           var totalWidth = contentEl.scrollWidth;
-          var maxPages = Math.ceil(totalWidth / viewWidth);
+          var maxPages = Math.ceil(totalWidth / viewWidth) || 1;
           currentPageIndex = Math.max(0, maxPages - 1);
       } else {
           currentPageIndex = targetPage || 0;
       }
-      
       contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
       updateProgress(); 
       if(cb) cb(); 
@@ -636,8 +579,8 @@ function loadSpineItem(index, targetPage, cb) {
 function nextPage() {
   var contentEl = document.getElementById('content');
   var totalWidth = contentEl.scrollWidth;
-  var viewWidth = window.innerWidth;
-  var maxPages = Math.ceil(totalWidth / viewWidth);
+  var viewWidth = getViewWidth();
+  var maxPages = Math.ceil(totalWidth / viewWidth) || 1;
   
   if (currentPageIndex < maxPages - 1) {
     currentPageIndex++;
@@ -651,7 +594,7 @@ function nextPage() {
 
 function prevPage() {
   var contentEl = document.getElementById('content');
-  var viewWidth = window.innerWidth;
+  var viewWidth = getViewWidth();
   
   if (currentPageIndex > 0) {
     currentPageIndex--;
@@ -659,16 +602,14 @@ function prevPage() {
     updateProgress();
   } else if (Book.currentIndex > 0) {
     showLoading("Loading...");
-    loadSpineItem(Book.currentIndex - 1, -1, function() {
-      showLoading(false);
-    });
+    loadSpineItem(Book.currentIndex - 1, -1, function() { showLoading(false); });
   }
 }
 
 function updateProgress() {
   var contentEl = document.getElementById('content');
   var totalWidth = contentEl.scrollWidth;
-  var viewWidth = window.innerWidth;
+  var viewWidth = getViewWidth();
   var maxPages = Math.ceil(totalWidth / viewWidth) || 1;
   
   if (currentPageIndex >= maxPages) {
@@ -703,7 +644,7 @@ function showTOCScreen() {
   for(var i=0; i<Book.spine.length; i++) {
     var title = Book.tocMap[Book.spine[i]] || ('Chapter ' + (i + 1));
     var activeClass = (i === Book.currentIndex) ? 'active-chapter' : '';
-    html += '<a href="#" class="' + activeClass + '" onclick="jumpToSpine(' + i + ')">' + title + '</a>';
+    html += '<a href="#" class="' + activeClass + '" onclick="jumpToSpine(' + i + ')">' + (i + 1) + '. ' + title + '</a>';
   }
   listEl.innerHTML = html;
   navigate('TOC');
@@ -716,10 +657,8 @@ function showTOCScreen() {
 
 function jumpToSpine(idx) {
   showLoading("Jumping...");
-  history.back(); 
-  setTimeout(function() {
-      loadSpineItem(idx, 0, function() { showLoading(false); });
-  }, 50);
+  navigate('READER');
+  setTimeout(function() { loadSpineItem(idx, 0, function() { showLoading(false); }); }, 50);
 }
 
 function showBookmarksScreen() {
@@ -730,10 +669,10 @@ function showBookmarksScreen() {
       var spinePath = Book.spine[n.chapter];
       var chTitle = Book.tocMap[spinePath] || ('Chapter ' + (n.chapter + 1));
       html += '<a href="#" class="menu-item" onclick="jumpToBookmark(' + n.chapter + ', ' + n.pageOffset + ')">' +
-              '<strong>' + chTitle + ' (Pg ' + (n.pageOffset + 1) + ')</strong><br>' + 
-              '<span style="opacity:0.7;font-size:11px;display:block;margin-top:4px;">' + n.text + '</span></a>';
+              '<strong style="color:#3b82f6;">' + chTitle + ' (Pg ' + (n.pageOffset + 1) + ')</strong><br>' + 
+              '<span style="opacity:0.7;font-size:13px;display:block;margin-top:4px;">' + n.text + '</span></a>';
     });
-    if(notes.length === 0) html = '<div style="padding:25px; text-align:center; opacity:0.6; font-size:12px;">No bookmarks added.</div>';
+    if(notes.length === 0) html = '<div style="padding:25px; text-align:center; opacity:0.5; font-size:14px;">No bookmarks added yet.</div>';
     listEl.innerHTML = html;
     
     navigate('NOTES');
@@ -744,31 +683,44 @@ function showBookmarksScreen() {
 
 function jumpToBookmark(ch, pg) {
   showLoading("Jumping...");
-  history.back(); 
-  setTimeout(function() {
-      loadSpineItem(ch, pg, function() { showLoading(false); });
-  }, 50);
+  navigate('READER');
+  setTimeout(function() { loadSpineItem(ch, pg, function() { showLoading(false); }); }, 50);
 }
 
 function addBookmark() {
   var sampleText = document.getElementById('content').innerText.substring(0, 50).trim() + "...";
   DB.saveNote(Book.id, Book.currentIndex, currentPageIndex, sampleText, function() {
     alert("Bookmark Saved!");
-    history.back();
+    history.back(); // Reverts Menu overlay back to READER seamlessly
   });
 }
 
 /* --- CLOUD PHONE HARDWARE TYPOGRAPHY & ROTATION --- */
 function adjustTextSize(delta) {
-  currentFontSize = Math.max(8, Math.min(48, currentFontSize + delta));
-  localStorage.setItem('epub_fontsize', currentFontSize);
+  if (delta !== 0) {
+      currentFontSize = Math.max(8, Math.min(48, currentFontSize + delta));
+      localStorage.setItem('epub_fontsize', currentFontSize);
+  }
   
   var contentEl = document.getElementById('content');
-  if(contentEl) {
+  if(contentEl && Book.id) {
+      var vw = getViewWidth();
+      var totalWidth = contentEl.scrollWidth;
+      var maxP = Math.ceil(totalWidth / vw) || 1;
+      var ratio = currentPageIndex / maxP; // Snapshot relative reading position
+      
       contentEl.style.fontSize = currentFontSize + 'px';
-      currentPageIndex = 0;
-      contentEl.style.transform = 'translateX(0px)';
-      updateProgress();
+      
+      setTimeout(function() {
+          var newTotalWidth = contentEl.scrollWidth;
+          var newMaxP = Math.ceil(newTotalWidth / vw) || 1;
+          
+          currentPageIndex = Math.floor(ratio * newMaxP);
+          currentPageIndex = Math.max(0, Math.min(currentPageIndex, newMaxP - 1));
+          
+          contentEl.style.transform = 'translateX(' + (-currentPageIndex * vw) + 'px)';
+          updateProgress();
+      }, 50);
   }
 }
 
@@ -776,7 +728,7 @@ function setRotation(dir) {
   var w = document.getElementById('wrapper');
   if (dir === 'left') { w.className = w.className === 'rotate-left' ? '' : 'rotate-left'; } 
   else { w.className = w.className === 'rotate-right' ? '' : 'rotate-right'; }
-  setTimeout(function() { adjustTextSize(0); }, 50);
+  setTimeout(function() { adjustTextSize(0); }, 50); // Recalculates exact sizing ratio post-rotation
 }
 
 function scrollScreen(amount) {
@@ -785,7 +737,6 @@ function scrollScreen(amount) {
   else if (uiState === 'MENU') active = document.getElementById('menuOverlay');
   else if (uiState === 'TOC') active = document.getElementById('tocScreen');
   else if (uiState === 'NOTES') active = document.getElementById('notesScreen');
-  
   if (active) active.scrollTop += amount;
 }
 
@@ -801,22 +752,15 @@ function setFontFam(f) {
   history.back(); 
 }
 
-/* --- OFFICIAL HARDWARE LISTENER (RESTORED D-PAD & CYCLING) --- */
+/* --- OFFICIAL HARDWARE LISTENER (KEYPAD / SOFT KEYS) --- */
 window.addEventListener('keydown', function(e) {
-  
   if (e.key === 'SoftRight' || e.key === 'Backspace' || e.key === 'Escape') {
       if (document.activeElement.tagName === 'INPUT') return; 
       if (uiState !== 'HOME') { e.preventDefault(); history.back(); return; }
   }
 
-  // Handle Reading Pagination smoothly with D-Pad
-  if (uiState === 'READER') {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextPage(); return; }
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevPage(); return; }
-  }
-
-  // Restored Circular Menu Navigation (D-PAD UP/DOWN cycling)
-  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+  // Circular Menu Navigation (D-PAD UP/DOWN)
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       var container;
       if (uiState === 'HOME') container = document.getElementById('homeScreen');
       else if (uiState === 'MENU') container = document.getElementById('menuOverlay');
@@ -831,12 +775,29 @@ window.addEventListener('keydown', function(e) {
           
           if (focusable.length > 0) {
               var currentIndex = focusable.indexOf(document.activeElement);
-              if (e.key === 'ArrowDown') {
-                  var nextIndex = (currentIndex + 1) % focusable.length;
-                  focusable[nextIndex].focus();
+              var isVertical = (e.key === 'ArrowUp' || e.key === 'ArrowDown');
+              var isForward = (e.key === 'ArrowDown' || e.key === 'ArrowRight');
+              
+              if (uiState === 'HOME' && document.activeElement.classList.contains('book-card')) {
+                  // Advanced Grid Focus Logic
+                  var rowSize = 3;
+                  if (e.key === 'ArrowDown') { currentIndex += rowSize; }
+                  else if (e.key === 'ArrowUp') { currentIndex -= rowSize; }
+                  else if (e.key === 'ArrowRight') { currentIndex += 1; }
+                  else if (e.key === 'ArrowLeft') { currentIndex -= 1; }
+                  
+                  if (currentIndex >= focusable.length) currentIndex = focusable.length - 1;
+                  if (currentIndex < 0) currentIndex = 0;
+                  focusable[currentIndex].focus();
               } else {
-                  var prevIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
-                  focusable[prevIndex].focus();
+                  // Standard Linear Menu Focus Logic
+                  if (isForward) {
+                      var nextIndex = (currentIndex + 1) % focusable.length;
+                      focusable[nextIndex].focus();
+                  } else {
+                      var prevIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+                      focusable[prevIndex].focus();
+                  }
               }
           }
       }
@@ -855,18 +816,10 @@ window.addEventListener('keydown', function(e) {
       if (uiState === 'READER') showTOCScreen(); 
       else if (uiState === 'TOC') history.back();
       break;
-    case '4': 
-      if (uiState === 'READER') prevPage(); 
-      break;
-    case '6': 
-      if (uiState === 'READER') nextPage(); 
-      break;
-    case '2': 
-      if (uiState !== 'READER') scrollScreen(-60); 
-      break;
-    case '8': 
-      if (uiState !== 'READER') scrollScreen(60); 
-      break;
+    case '4': if (uiState === 'READER') prevPage(); break;
+    case '6': if (uiState === 'READER') nextPage(); break;
+    case '2': if (uiState !== 'READER') scrollScreen(-150); break;
+    case '8': if (uiState !== 'READER') scrollScreen(150); break;
   }
 });
 </script>
