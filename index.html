@@ -96,13 +96,13 @@ body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
 .rsvp-right { flex:1 1 0; text-align:left; }
 
 /* 3-Line Snake Teleprompter Styles */
-.rsvp-tele-snake { display: flex; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; gap: 15px; font-size: 18px; font-family: sans-serif; }
-.tele-row { width: 100%; white-space: nowrap; text-overflow: clip; }
+.rsvp-tele-snake { display: flex; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; gap: 15px; font-size: 18px; font-family: sans-serif; overflow: hidden; box-sizing: border-box; }
+.tele-row { width: 100%; white-space: nowrap; text-overflow: clip; overflow: hidden; }
 .tele-row-1, .tele-row-3 { text-align: center; opacity: 0.4; }
 .tele-row-2 { display: flex; align-items: center; justify-content: center; width: 100%; }
-.tele-left { flex: 1 1 0; min-width: 0; text-align: right; padding-right: 12px; opacity: 0.7; overflow: hidden; }
-.tele-focus { flex: 0 0 auto; font-weight: 700; color: var(--bg-color); background: var(--fg-color); padding: 6px 14px; border-radius: 8px; font-size: 22px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-.tele-right { flex: 1 1 0; min-width: 0; text-align: left; padding-left: 12px; opacity: 0.7; overflow: hidden; }
+.tele-left { flex: 1 1 0; min-width: 0; text-align: right; opacity: 0.7; overflow: hidden; }
+.tele-focus { flex: 0 0 auto; font-weight: 400; color: inherit; background: rgba(255, 193, 7, 0.25); border: 1px solid rgba(255, 193, 7, 0.5); padding: 4px 10px; margin: 0 12px; border-radius: 4px; font-size: 22px; }
+.tele-right { flex: 1 1 0; min-width: 0; text-align: left; opacity: 0.7; overflow: hidden; }
 
 #loading { padding:16px; font-size:12px; text-align:center; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:70%; font-weight:400; text-transform:uppercase; letter-spacing:1px; z-index:3000; background:var(--bg-color); color:var(--fg-color); border:1px solid var(--border-color); }
 
@@ -610,7 +610,7 @@ function setupFileUploadListener() {
                     var fullCover = resolvePath(baseDir, coverPath);
                     var coverRaw  = zip.getFile(fullCover);
                     if (coverRaw) {
-                        var mime = fullCover.toLowerCase().indexOf('.png') !== -1 ? 'image/png' : fullCover.toLowerCase().indexOf('.gif') !== -1 ? 'image/gif' : 'image/jpeg';
+                        var mime = fullCover.toLowerCase().indexOf('.png') !== -1 ? 'image/png' : fullCover.toLowerCase().indexOf('.gif') !== -1 ? 'image/jpeg';
                         coverBase64 = 'data:' + mime + ';base64,' + bytesToBase64(coverRaw);
                     }
                 }
