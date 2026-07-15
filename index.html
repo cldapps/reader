@@ -29,7 +29,7 @@ html,body { margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-famil
 .font-serif-bn  #content { font-family:'Tiro Bangla','Kalpurush',serif!important; }
 .font-sans-bn   #content { font-family:'Hind Siliguri','Siyam Rupali',sans-serif!important; }
 
-a:focus,button:focus,input:focus,.book-card:focus,.tab-btn:focus,.menu-item:focus { outline:none!important;background-color:var(--fg-color)!important;color:var(--bg-color)!important; }
+a:focus,button:focus,input:focus,.book-card:focus,.tab-btn:focus,.menu-item:focus,.menu-header:focus { outline:none!important;background-color:var(--fg-color)!important;color:var(--bg-color)!important; }
 a:focus *,button:focus *,.book-card:focus * { color:var(--bg-color)!important; }
 
 #homeScreen,#tocScreen,#notesScreen { padding:12px;box-sizing:border-box;width:100%;height:100%;overflow-y:auto; }
@@ -61,11 +61,14 @@ input[type=file] { display:none; }
 #chapterTitleDisplay { text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:80%; }
 #progressBar { position:fixed;bottom:0;left:0;height:2px;background:var(--fg-color);width:0%;z-index:999; }
 
+/* Menu & Accordion UI */
 #menuOverlay { position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-color);color:var(--fg-color);z-index:1000;overflow-y:auto; }
+.menu-header { display:block;font-size:11px;color:var(--fg-color);padding:20px 12px 10px 12px;font-weight:500;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-color);background:rgba(127,127,127,0.2);text-decoration:none; }
+.menu-section { display:block; }
+.menu-section.hidden { display:none !important; }
 .menu-item { display:block;padding:14px 12px;border-bottom:1px solid var(--border-color);color:inherit;text-decoration:none;font-size:13px;font-weight:400; }
 .menu-item-danger { font-weight:500;letter-spacing:0.5px; }
 .menu-item-danger::before { content:"\26A0  "; }
-.menu-header { font-size:11px;color:var(--fg-color);padding:20px 12px 6px 12px;font-weight:500;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-color); }
 
 #tocList a { display:flex;padding:10px 12px;border-bottom:1px solid var(--border-color);color:inherit;text-decoration:none;font-size:13px;line-height:1.4; }
 #tocList a .toc-num { flex:0 0 auto;min-width:26px;font-weight:400;opacity:0.7; }
@@ -74,7 +77,14 @@ input[type=file] { display:none; }
 
 #loading { padding:16px;font-size:12px;text-align:center;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:70%;font-weight:400;text-transform:uppercase;letter-spacing:1px;z-index:2000;background:var(--bg-color);color:var(--fg-color);border:1px solid var(--border-color); }
 
-.hidden { display:none!important; }
+/* RSVP Speed Reader UI */
+#rsvpScreen { position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-color);color:var(--fg-color);z-index:1005;display:flex;flex-direction:column;justify-content:center;align-items:center; }
+#rsvpWord { font-size:40px;font-weight:500;text-align:center;padding:20px;word-break:break-word;line-height:1.2; }
+#rsvpStatus { position:absolute;top:10px;right:10px;font-size:12px;font-weight:bold;opacity:0.7; }
+#rsvpProgress { position:absolute;bottom:0;left:0;height:4px;background:var(--fg-color);width:0%;transition:width 0.1s; }
+#rsvpHelp { position:absolute;bottom:20px;font-size:11px;opacity:0.6;text-align:center;width:100%;line-height:1.5; }
+
+.hidden { display:none !important; }
 </style>
 </head>
 <body onload="initApp()">
@@ -111,26 +121,53 @@ input[type=file] { display:none; }
 </div>
 
 <div id="menuOverlay" class="hidden">
-  <div class="menu-header">Menu Options</div>
-  <a href="#" class="menu-item" id="menuFirstItem" onclick="history.back(); return false;">Resume Reading</a>
-  <a href="#" class="menu-item" onclick="closeBook(); return false;">Exit to Library</a>
-  <div class="menu-header">Tools</div>
-  <a href="#" class="menu-item" onclick="addBookmark(); return false;">Add Bookmark Here</a>
-  <a href="#" class="menu-item" onclick="showBookmarksScreen(); return false;">View Bookmarks</a>
-  <div class="menu-header">Theme</div>
-  <a href="#" class="menu-item" onclick="setTheme('light');      return false;">Light</a>
-  <a href="#" class="menu-item" onclick="setTheme('sepia');      return false;">Sepia</a>
-  <a href="#" class="menu-item" onclick="setTheme('sepia-dark'); return false;">Sepia Dark</a>
-  <a href="#" class="menu-item" onclick="setTheme('dark');        return false;">Dark</a>
-  <a href="#" class="menu-item" onclick="setTheme('green');       return false;">Terminal Green</a>
-  <div class="menu-header">Typography</div>
-  <a href="#" class="menu-item" onclick="setFontFam('default');  return false;">Publisher Default</a>
-  <a href="#" class="menu-item" onclick="setFontFam('serif-en'); return false;">Merriweather (Serif)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('sans-en');  return false;">Roboto (Sans)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('serif-bn'); return false;">Tiro Bangla (BN)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('sans-bn');  return false;">Hind Siliguri (BN)</a>
-  <div class="menu-header">Danger Zone</div>
-  <a href="#" class="menu-item menu-item-danger" onclick="confirmDeleteBook(); return false;">Delete This Book</a>
+  <a href="#" class="menu-header" onclick="toggleAccordion('menu-main'); return false;">Menu Options</a>
+  <div id="menu-main" class="menu-section hidden">
+    <a href="#" class="menu-item" id="menuFirstItem" onclick="history.back(); return false;">Resume Reading</a>
+    <a href="#" class="menu-item" onclick="closeBook(); return false;">Exit to Library</a>
+  </div>
+
+  <a href="#" class="menu-header" onclick="toggleAccordion('menu-rsvp'); return false;">Speed Reader Settings</a>
+  <div id="menu-rsvp" class="menu-section hidden">
+    <a href="#" class="menu-item" onclick="startRSVP(); return false;">Start Speed Reader</a>
+    <a href="#" class="menu-item" onclick="toggleRSVPMode(); return false;" id="rsvpModeToggle">Mode: Continuous</a>
+  </div>
+
+  <a href="#" class="menu-header" onclick="toggleAccordion('menu-tools'); return false;">Tools</a>
+  <div id="menu-tools" class="menu-section hidden">
+    <a href="#" class="menu-item" onclick="addBookmark(); return false;">Add Bookmark Here</a>
+    <a href="#" class="menu-item" onclick="showBookmarksScreen(); return false;">View Bookmarks</a>
+  </div>
+
+  <a href="#" class="menu-header" onclick="toggleAccordion('menu-theme'); return false;">Theme</a>
+  <div id="menu-theme" class="menu-section hidden">
+    <a href="#" class="menu-item" onclick="setTheme('light');      return false;">Light</a>
+    <a href="#" class="menu-item" onclick="setTheme('sepia');      return false;">Sepia</a>
+    <a href="#" class="menu-item" onclick="setTheme('sepia-dark'); return false;">Sepia Dark</a>
+    <a href="#" class="menu-item" onclick="setTheme('dark');        return false;">Dark</a>
+    <a href="#" class="menu-item" onclick="setTheme('green');       return false;">Terminal Green</a>
+  </div>
+
+  <a href="#" class="menu-header" onclick="toggleAccordion('menu-typo'); return false;">Typography</a>
+  <div id="menu-typo" class="menu-section hidden">
+    <a href="#" class="menu-item" onclick="setFontFam('default');  return false;">Publisher Default</a>
+    <a href="#" class="menu-item" onclick="setFontFam('serif-en'); return false;">Merriweather (Serif)</a>
+    <a href="#" class="menu-item" onclick="setFontFam('sans-en');  return false;">Roboto (Sans)</a>
+    <a href="#" class="menu-item" onclick="setFontFam('serif-bn'); return false;">Tiro Bangla (BN)</a>
+    <a href="#" class="menu-item" onclick="setFontFam('sans-bn');  return false;">Hind Siliguri (BN)</a>
+  </div>
+
+  <a href="#" class="menu-header" onclick="toggleAccordion('menu-danger'); return false;">Danger Zone</a>
+  <div id="menu-danger" class="menu-section hidden">
+    <a href="#" class="menu-item menu-item-danger" onclick="confirmDeleteBook(); return false;">Delete This Book</a>
+  </div>
+</div>
+
+<div id="rsvpScreen" class="hidden">
+  <div id="rsvpStatus">PAUSED - 300 WPM</div>
+  <div id="rsvpWord">Ready</div>
+  <div id="rsvpHelp">[OK] Play/Pause &nbsp;|&nbsp; [7] Slower &nbsp;|&nbsp; [9] Faster<br>[*] Smaller &nbsp;|&nbsp; [#] Larger</div>
+  <div id="rsvpProgress"></div>
 </div>
 
 <div id="progressBar" class="hidden"></div>
@@ -205,15 +242,9 @@ var DB = (function () {
     };
 })();
 
-/* ═══════════════════════════════════════════════════════════
-   PERF: TextDecoder with fallback
-   ~10-30× faster than byte-by-byte string concatenation
-   for large XHTML chapters and OPF manifests.
-═══════════════════════════════════════════════════════════ */
 var _td = (typeof TextDecoder !== 'undefined') ? new TextDecoder('utf-8') : null;
 function utf8Decode(bytes) {
     if (_td) return _td.decode(bytes);
-    // Pure-JS fallback (kept for very old environments)
     var out = '', i = 0;
     while (i < bytes.length) {
         var c = bytes[i++];
@@ -229,10 +260,6 @@ function utf8Decode(bytes) {
     return out;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PERF: bytesToBase64 — chunked to avoid stack overflow on
-   large images; avoids Function.prototype.apply on big arrays.
-═══════════════════════════════════════════════════════════ */
 function bytesToBase64(bytes) {
     var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
     var out = '', i = 0, len = bytes.length;
@@ -247,12 +274,6 @@ function bytesToBase64(bytes) {
     return out;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PERF: Inflate — typed-array output instead of Array.push()
-   Uses a doubling buffer strategy: starts at 64 KB, doubles
-   when needed. Eliminates the expensive Array→Uint8Array copy
-   at the end and avoids GC pressure from Array.push().
-═══════════════════════════════════════════════════════════ */
 var Inflate = (function () {
     var LBASE = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
     var LEXT  = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
@@ -260,54 +281,31 @@ var Inflate = (function () {
     var DEXT  = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
     var CLORDER = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
 
-    // ── Growable output buffer ────────────────────────────────────────────────
-    function GrowBuf(initSize) {
-        this.buf = new Uint8Array(initSize || 65536);
-        this.len = 0;
-    }
+    function GrowBuf(initSize) { this.buf = new Uint8Array(initSize || 65536); this.len = 0; }
     GrowBuf.prototype.push = function (byte) {
-        if (this.len === this.buf.length) {
-            var next = new Uint8Array(this.buf.length * 2);
-            next.set(this.buf);
-            this.buf = next;
-        }
+        if (this.len === this.buf.length) { var next = new Uint8Array(this.buf.length * 2); next.set(this.buf); this.buf = next; }
         this.buf[this.len++] = byte;
     };
-    GrowBuf.prototype.slice = function () {
-        return this.buf.subarray(0, this.len);
-    };
-    // back-reference copy — inline for hot path
+    GrowBuf.prototype.slice = function () { return this.buf.subarray(0, this.len); };
     GrowBuf.prototype.copyFrom = function (dist, len) {
         var start = this.len - dist;
-        // ensure capacity for len bytes
         var needed = this.len + len;
-        if (needed > this.buf.length) {
-            var next = new Uint8Array(Math.max(this.buf.length * 2, needed));
-            next.set(this.buf);
-            this.buf = next;
-        }
+        if (needed > this.buf.length) { var next = new Uint8Array(Math.max(this.buf.length * 2, needed)); next.set(this.buf); this.buf = next; }
         for (var k = 0; k < len; k++) this.buf[this.len++] = this.buf[start + k];
     };
 
-    // ── Bit reader ────────────────────────────────────────────────────────────
-    function BitReader(data, pos) {
-        this.data = data; this.pos = pos || 0;
-        this.bitbuf = 0; this.bitcnt = 0;
-    }
+    function BitReader(data, pos) { this.data = data; this.pos = pos || 0; this.bitbuf = 0; this.bitcnt = 0; }
     BitReader.prototype.getBit = function () {
         if (this.bitcnt === 0) { this.bitbuf = this.data[this.pos++]; this.bitcnt = 8; }
         var bit = this.bitbuf & 1; this.bitbuf >>= 1; this.bitcnt--; return bit;
     };
     BitReader.prototype.getBits = function (n) {
-        var v = 0;
-        for (var i = 0; i < n; i++) v |= this.getBit() << i;
-        return v;
+        var v = 0; for (var i = 0; i < n; i++) v |= this.getBit() << i; return v;
     };
 
     function buildHuffman(lengths) {
         var MAXBITS = 15, counts = new Int32Array(MAXBITS + 1);
-        for (var i = 0; i < lengths.length; i++) counts[lengths[i]]++;
-        counts[0] = 0;
+        for (var i = 0; i < lengths.length; i++) counts[lengths[i]]++; counts[0] = 0;
         var offs = new Int32Array(MAXBITS + 1);
         for (var z = 1; z < MAXBITS; z++) offs[z + 1] = offs[z] + counts[z];
         var symbols = new Int32Array(lengths.length);
@@ -341,7 +339,6 @@ var Inflate = (function () {
         }
     }
 
-    // PERF D: build FIXED tables with typed arrays, not push()
     var FIXED_LIT, FIXED_DIST;
     (function () {
         var lens = new Uint8Array(288), i = 0;
@@ -355,50 +352,37 @@ var Inflate = (function () {
         FIXED_DIST = buildHuffman(dlens);
     })();
 
-    // PERF G: use pre-sized Int16Array for lens — avoids Array.push() on every
-    // compressed file (runs per chapter, not just once at startup like FIXED tables).
     function inflateDynamicTables(br) {
-        var hlit  = br.getBits(5) + 257;
-        var hdist = br.getBits(5) + 1;
-        var hclen = br.getBits(4) + 4;
+        var hlit  = br.getBits(5) + 257, hdist = br.getBits(5) + 1, hclen = br.getBits(4) + 4;
         var clLens = new Uint8Array(19);
         for (var i = 0; i < hclen; i++) clLens[CLORDER[i]] = br.getBits(3);
         var clTable = buildHuffman(clLens);
-        var total = hlit + hdist;
-        var lens  = new Uint16Array(total);
-        var lpos  = 0;
+        var total = hlit + hdist, lens  = new Uint16Array(total), lpos  = 0;
         while (lpos < total) {
             var sym = decodeSymbol(br, clTable);
             if (sym < 16) { lens[lpos++] = sym; }
-            else if (sym === 16) { var prev = lens[lpos - 1]; var rep  = br.getBits(2) + 3; while (rep--)  lens[lpos++] = prev; }
-            else if (sym === 17) {                             var rep2 = br.getBits(3) + 3; while (rep2--) lens[lpos++] = 0;    }
-            else                 {                             var rep3 = br.getBits(7) + 11;while (rep3--) lens[lpos++] = 0;    }
+            else if (sym === 16) { var prev = lens[lpos - 1], rep  = br.getBits(2) + 3; while (rep--)  lens[lpos++] = prev; }
+            else if (sym === 17) { var rep2 = br.getBits(3) + 3; while (rep2--) lens[lpos++] = 0; }
+            else                 { var rep3 = br.getBits(7) + 11;while (rep3--) lens[lpos++] = 0; }
         }
         return { lit: buildHuffman(lens.subarray(0, hlit)), dist: buildHuffman(lens.subarray(hlit, total)) };
     }
 
     function inflateRaw(data, pos) {
-        var br  = new BitReader(data, pos);
-        var out = new GrowBuf(65536);
+        var br  = new BitReader(data, pos), out = new GrowBuf(65536);
         for (;;) {
-            var final = br.getBit();
-            var type  = br.getBits(2);
+            var final = br.getBit(), type  = br.getBits(2);
             if (type === 0) {
                 br.bitbuf = 0; br.bitcnt = 0;
-                var len = data[br.pos] | (data[br.pos + 1] << 8);
-                br.pos += 4;
+                var len = data[br.pos] | (data[br.pos + 1] << 8); br.pos += 4;
                 var needed = out.len + len;
                 if (needed > out.buf.length) {
-                    var nb = new Uint8Array(Math.max(out.buf.length * 2, needed));
-                    nb.set(out.buf); out.buf = nb;
+                    var nb = new Uint8Array(Math.max(out.buf.length * 2, needed)); nb.set(out.buf); out.buf = nb;
                 }
                 out.buf.set(data.subarray(br.pos, br.pos + len), out.len);
                 out.len += len; br.pos += len;
-            } else if (type === 1) {
-                inflateBlockData(br, FIXED_LIT, FIXED_DIST, out);
-            } else if (type === 2) {
-                var tabs = inflateDynamicTables(br);
-                inflateBlockData(br, tabs.lit, tabs.dist, out);
+            } else if (type === 1) { inflateBlockData(br, FIXED_LIT, FIXED_DIST, out);
+            } else if (type === 2) { var tabs = inflateDynamicTables(br); inflateBlockData(br, tabs.lit, tabs.dist, out);
             } else { throw new Error('bad block'); }
             if (final) break;
         }
@@ -408,76 +392,40 @@ var Inflate = (function () {
     return { inflateRaw: inflateRaw };
 })();
 
-/* ═══════════════════════════════════════════════════════════
-   PERF: ZIP reader — O(1) name→entry lookup via Map,
-   decoded-file LRU cache to avoid re-inflating the same
-   chapter or image multiple times per session.
-═══════════════════════════════════════════════════════════ */
 function readZipEntries(buf) {
     var view = new DataView(buf), u8 = new Uint8Array(buf);
-    // Locate End-Of-Central-Directory
     var eocd = -1, minSearch = Math.max(0, u8.length - 65557);
     for (var i = u8.length - 22; i >= minSearch; i--) {
         if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
     }
     if (eocd === -1) throw new Error('Not EPUB File structure');
 
-    var entryCount = view.getUint16(eocd + 10, true);
-    var cdOffset   = view.getUint32(eocd + 16, true);
-
-    // Build entries + Map in one pass
-    var entryMap = new Map();
-    var p = cdOffset;
+    var entryCount = view.getUint16(eocd + 10, true), cdOffset = view.getUint32(eocd + 16, true);
+    var entryMap = new Map(), p = cdOffset;
     for (var e = 0; e < entryCount; e++) {
-        var compMethod = view.getUint16(p + 10, true);
-        var uncompSize = view.getUint32(p + 24, true);
-        var nameLen    = view.getUint16(p + 28, true);
-        var extraLen   = view.getUint16(p + 30, true);
-        var commentLen = view.getUint16(p + 32, true);
-        var name       = utf8Decode(u8.subarray(p + 46, p + 46 + nameLen));
-        entryMap.set(name, {
-            compMethod:  compMethod,
-            uncompSize:  uncompSize,
-            localOffset: view.getUint32(p + 42, true)
-        });
+        var compMethod = view.getUint16(p + 10, true), uncompSize = view.getUint32(p + 24, true);
+        var nameLen    = view.getUint16(p + 28, true), extraLen   = view.getUint16(p + 30, true);
+        var commentLen = view.getUint16(p + 32, true), name       = utf8Decode(u8.subarray(p + 46, p + 46 + nameLen));
+        entryMap.set(name, { compMethod: compMethod, uncompSize: uncompSize, localOffset: view.getUint32(p + 42, true) });
         p += 46 + nameLen + extraLen + commentLen;
     }
 
-    // LRU cache — evict oldest when over 60 entries (covers images + chapters)
-    var cache = new Map();
-    var MAX_CACHE = 60;
-
+    var cache = new Map(), MAX_CACHE = 60;
     function getFile(name) {
-        if (cache.has(name)) {
-            // Move to end (most-recently-used)
-            var v = cache.get(name); cache.delete(name); cache.set(name, v); return v;
-        }
+        if (cache.has(name)) { var v = cache.get(name); cache.delete(name); cache.set(name, v); return v; }
         var entry = entryMap.get(name);
         if (!entry) return null;
+        var lp = entry.localOffset, dataStart = lp + 30 + view.getUint16(lp + 26, true) + view.getUint16(lp + 28, true), raw;
+        if (entry.compMethod === 0) { raw = u8.slice(dataStart, dataStart + entry.uncompSize); } 
+        else if (entry.compMethod === 8) { raw = Inflate.inflateRaw(u8, dataStart).data; } 
+        else { return null; }
 
-        var lp        = entry.localOffset;
-        var dataStart = lp + 30 + view.getUint16(lp + 26, true) + view.getUint16(lp + 28, true);
-        var raw;
-        if (entry.compMethod === 0) {
-            raw = u8.slice(dataStart, dataStart + entry.uncompSize); // copy so buf can be GC'd partially
-        } else if (entry.compMethod === 8) {
-            raw = Inflate.inflateRaw(u8, dataStart).data;
-        } else { return null; }
-
-        if (cache.size >= MAX_CACHE) {
-            // Evict first (oldest) entry
-            cache.delete(cache.keys().next().value);
-        }
-        cache.set(name, raw);
-        return raw;
+        if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value);
+        cache.set(name, raw); return raw;
     }
-
     return { getFile: getFile, entryMap: entryMap };
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PATH HELPERS
-═══════════════════════════════════════════════════════════ */
 function dirName(path) { var i = path.lastIndexOf('/'); return i === -1 ? '' : path.substring(0, i); }
 function resolvePath(baseDir, rel) {
     if (!rel || /^https?:\/\//i.test(rel) || rel.indexOf('data:') === 0) return rel;
@@ -510,12 +458,12 @@ window.addEventListener('popstate', function (e) {
 });
 
 function applyScreenState(state) {
-    // Hide all panels
     document.getElementById('homeScreen').className   = 'hidden';
     document.getElementById('readerScreen').className = 'hidden';
     document.getElementById('tocScreen').className    = 'hidden';
     document.getElementById('notesScreen').className  = 'hidden';
     document.getElementById('menuOverlay').className  = 'hidden';
+    document.getElementById('rsvpScreen').className   = 'hidden';
     document.getElementById('progressBar').className  = 'hidden';
     document.getElementById('readerFooter').className = 'hidden';
 
@@ -536,12 +484,22 @@ function applyScreenState(state) {
     } else if (state === 'MENU') {
         document.getElementById('readerScreen').className = '';
         document.getElementById('menuOverlay').className  = '';
-        var m1 = document.getElementById('menuFirstItem');
-        if (m1) m1.focus();
+        
+        var activeSection = document.querySelector('.menu-section:not(.hidden)');
+        if (!activeSection) toggleAccordion('menu-main');
+        else {
+            var firstItem = activeSection.querySelector('.menu-item');
+            if (firstItem) firstItem.focus();
+        }
     } else if (state === 'TOC') {
         document.getElementById('tocScreen').className = '';
     } else if (state === 'NOTES') {
         document.getElementById('notesScreen').className = '';
+    } else if (state === 'RSVP') {
+        document.getElementById('rsvpScreen').className = '';
+        updateRSVPSize();
+        document.getElementById('rsvpStatus').textContent = 'PAUSED - ' + rsvpState.wpm + ' WPM';
+        updateRSVPDisplay();
     }
 }
 
@@ -554,34 +512,31 @@ var currentTab          = 'recent';
 var GRID_COLS           = 3;
 var currentPageIndex    = 0;
 var pendingReaderTarget = null;
-
-// PERF: per-session image data-URL cache to avoid re-inflating + re-encoding
-// the same image when navigating back to a chapter.
 var _imgCache = new Map();
-
-// PERF: load-generation counter — if the user flips quickly the callback from
-// an older load is ignored when a newer one has already started.
 var _loadGen = 0;
-
-// PERF B+C: cached DOM references — set once in initApp() so hot-path
-// functions (updateProgress, getViewWidth, nextPage) never re-query the DOM.
 var _elContent, _elProgressBar, _elChapterTitle, _elProgressPct, _elWrapper;
 
-// PERF A: debounced saveProgress — IDB writes coalesce during rapid page turns
-// and font-size adjustments instead of firing on every single call.
+// --- RSVP STATE ---
+var rsvpState = {
+    active: false,
+    words: [],
+    index: 0,
+    wpm: 300,
+    mode: 'continuous',
+    timer: null,
+    pageEndIndex: 0
+};
+
 var _saveProgressTimer = null;
 function scheduleSaveProgress(id, chapter, page) {
     if (_saveProgressTimer) clearTimeout(_saveProgressTimer);
-    _saveProgressTimer = setTimeout(function () {
-        DB.saveProgress(id, chapter, page);
-        _saveProgressTimer = null;
-    }, 600);
+    _saveProgressTimer = setTimeout(function () { DB.saveProgress(id, chapter, page); _saveProgressTimer = null; }, 600);
 }
 
 function showLoading(text) {
     var l = document.getElementById('loading');
     if (text) { l.innerText = text; l.className = ''; }
-    else       { l.className = 'hidden'; }
+    else { l.className = 'hidden'; }
 }
 
 function loadSettings() {
@@ -590,22 +545,29 @@ function loadSettings() {
     var fSize = localStorage.getItem('epub_fontsize');
     document.body.className = 'theme-' + theme + ' font-' + font;
     if (fSize) currentFontSize = parseInt(fSize, 10);
+
+    // RSVP Settings
+    var rsvpWpm = localStorage.getItem('epub_rsvp_wpm');
+    if (rsvpWpm) rsvpState.wpm = parseInt(rsvpWpm, 10);
+    var rsvpMode = localStorage.getItem('epub_rsvp_mode');
+    if (rsvpMode) rsvpState.mode = rsvpMode;
 }
 
 function initApp() {
     loadSettings();
-    // PERF B+C: cache all frequently-accessed elements once
     _elContent      = document.getElementById('content');
     _elProgressBar  = document.getElementById('progressBar');
     _elChapterTitle = document.getElementById('chapterTitleDisplay');
     _elProgressPct  = document.getElementById('progressDisplay');
     _elWrapper      = document.getElementById('wrapper');
+    
+    document.getElementById('rsvpModeToggle').textContent = 'Mode: ' + (rsvpState.mode === 'continuous' ? 'Continuous' : 'Per Page');
     updateReaderWidthVar();
     DB.init(function () { renderHomeList('recent'); setupFileUploadListener(); });
 }
 
 /* ═══════════════════════════════════════════════════════════
-   FILE UPLOAD
+   FILE UPLOAD & PARSE
 ═══════════════════════════════════════════════════════════ */
 function setupFileUploadListener() {
     document.getElementById('fileInput').addEventListener('change', function (e) {
@@ -626,19 +588,16 @@ function setupFileUploadListener() {
                 var title      = titleMatch ? titleMatch[1] : file.name.replace('.epub', '');
                 var bookId     = 'local-' + Date.now();
 
-                // Cover extraction
                 var coverPath = null;
                 var epub3Cover = opfStr.match(/<item\s+[^>]*properties="cover-image"[^>]*href="([^"]+)"/i) ||
                                  opfStr.match(/<item\s+[^>]*href="([^"]+)"[^>]*properties="cover-image"/i);
-                if (epub3Cover) {
-                    coverPath = epub3Cover[1];
-                } else {
+                if (epub3Cover) { coverPath = epub3Cover[1]; } 
+                else {
                     var coverIdMatch = opfStr.match(/<meta\s+name="cover"\s+content="([^"]+)"/i);
                     var coverId = coverIdMatch ? coverIdMatch[1] : null;
                     if (coverId) {
-                        var r1 = new RegExp('<item\\s+[^>]*id="' + coverId + '"\\s+[^>]*href="([^"]+)"', 'i');
-                        var r2 = new RegExp('<item\\s+[^>]*href="([^"]+)"\\s+[^>]*id="' + coverId + '"', 'i');
-                        var cm = opfStr.match(r1) || opfStr.match(r2);
+                        var cm = opfStr.match(new RegExp('<item\\s+[^>]*id="' + coverId + '"\\s+[^>]*href="([^"]+)"', 'i')) || 
+                                 opfStr.match(new RegExp('<item\\s+[^>]*href="([^"]+)"\\s+[^>]*id="' + coverId + '"', 'i'));
                         if (cm) coverPath = cm[1];
                     }
                     if (!coverPath) {
@@ -659,21 +618,14 @@ function setupFileUploadListener() {
                 }
 
                 DB.saveBook(bookId, title, coverBase64, arrBuf, function () {
-                    showLoading(false);
-                    renderHomeList('uploaded');
+                    showLoading(false); renderHomeList('uploaded');
                 });
-            } catch (err) {
-                showLoading(false);
-                alert('Parsing failed. Unsupported or DRM protected.');
-            }
+            } catch (err) { showLoading(false); alert('Parsing failed.'); }
         };
         r.readAsArrayBuffer(file);
     });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   LIBRARY VIEW
-═══════════════════════════════════════════════════════════ */
 function renderHomeList(tabId) {
     currentTab = tabId;
     document.getElementById('tabBtn-recent').className   = 'tab-btn' + (tabId === 'recent'   ? ' active' : '');
@@ -685,23 +637,14 @@ function renderHomeList(tabId) {
 
     DB.getBooksList(function (books) {
         var showBooks = tabId === 'recent' ? books.slice(0, 8) : books;
-        // PERF: build DOM via fragment, not innerHTML string
         var frag = document.createDocumentFragment();
         var blank = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
         showBooks.forEach(function (b) {
-            var a   = document.createElement('a');
-            a.href  = '#';
-            a.className = 'book-card';
-            a.setAttribute('data-title', b.title);
-            a.setAttribute('data-id', b.id);
-            var img = document.createElement('img');
-            img.src = b.cover || blank;
-            img.alt = b.title;
-            img.onerror = function () { this.src = blank; };
-            var div = document.createElement('div');
-            div.textContent = b.title;
-            a.appendChild(img);
-            a.appendChild(div);
+            var a   = document.createElement('a'); a.href  = '#'; a.className = 'book-card';
+            a.setAttribute('data-title', b.title); a.setAttribute('data-id', b.id);
+            var img = document.createElement('img'); img.src = b.cover || blank; img.onerror = function () { this.src = blank; };
+            var div = document.createElement('div'); div.textContent = b.title;
+            a.appendChild(img); a.appendChild(div);
             a.addEventListener('click',       function (e) { e.preventDefault(); openBook(b.id); });
             a.addEventListener('mouseenter',  function () { showFullTitle(a); });
             a.addEventListener('mouseleave',  resetHomeHeader);
@@ -710,28 +653,19 @@ function renderHomeList(tabId) {
             frag.appendChild(a);
         });
         listEl.innerHTML = '';
-        if (showBooks.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center;padding:25px;font-size:12px;opacity:0.6;width:100%;">Shelf is empty.</div>';
-        } else {
-            listEl.appendChild(frag);
-        }
+        if (showBooks.length === 0) listEl.innerHTML = '<div style="text-align:center;padding:25px;font-size:12px;opacity:0.6;width:100%;">Shelf is empty.</div>';
+        else listEl.appendChild(frag);
     });
 }
 
 function showFullTitle(el) { document.getElementById('homeHeader').innerText = el.getAttribute('data-title'); }
 function resetHomeHeader() { document.getElementById('homeHeader').innerText = 'My Library'; }
 
-/* ═══════════════════════════════════════════════════════════
-   OPEN BOOK — OPF PARSE
-═══════════════════════════════════════════════════════════ */
 function openBook(id) {
     showLoading('Opening…');
     DB.getBookData(id, function (record) {
         if (!record) { showLoading(false); return; }
-        Book.id      = record.id;
-        Book.title   = record.title;
-        Book.tocMap  = {};
-        _imgCache    = new Map(); // clear image cache for new book
+        Book.id = record.id; Book.title = record.title; Book.tocMap = {}; _imgCache = new Map();
 
         try {
             Book.zip = readZipEntries(record.data);
@@ -740,19 +674,15 @@ function openBook(id) {
             Book.baseDir     = dirName(opfPath);
             var opfStr       = utf8Decode(Book.zip.getFile(opfPath));
 
-            // TOC: EPUB3 nav.html preferred, EPUB2 NCX fallback
-            var navHtmlMatch = opfStr.match(/<item\s+[^>]*properties="nav"[^>]*href="([^"]+)"/i) ||
-                               opfStr.match(/<item\s+[^>]*href="([^"]+)"[^>]*properties="nav"/i);
-            var ncxMatch     = opfStr.match(/<item\s+[^>]*id="ncx"\s+href="([^"]+)"/i) ||
-                               opfStr.match(/<item\s+[^>]*href="([^"]+)"\s+id="ncx"/i);
+            var navHtmlMatch = opfStr.match(/<item\s+[^>]*properties="nav"[^>]*href="([^"]+)"/i) || opfStr.match(/<item\s+[^>]*href="([^"]+)"[^>]*properties="nav"/i);
+            var ncxMatch     = opfStr.match(/<item\s+[^>]*id="ncx"\s+href="([^"]+)"/i) || opfStr.match(/<item\s+[^>]*href="([^"]+)"\s+id="ncx"/i);
 
             if (navHtmlMatch) {
-                var navP    = resolvePath(Book.baseDir, navHtmlMatch[1]);
+                var navP = resolvePath(Book.baseDir, navHtmlMatch[1]);
                 var navHtml = utf8Decode(Book.zip.getFile(navP) || new Uint8Array());
                 var aRx = /<a\s+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, aM;
                 while ((aM = aRx.exec(navHtml)) !== null) {
-                    var cSrc = aM[1].split('#')[0];
-                    var full = resolvePath(dirName(navP), cSrc);
+                    var full = resolvePath(dirName(navP), aM[1].split('#')[0]);
                     var text = aM[2].replace(/<[^>]+>/g, '').trim();
                     if (text && !Book.tocMap[full]) Book.tocMap[full] = text;
                 }
@@ -761,37 +691,22 @@ function openBook(id) {
                 var ncxStr  = utf8Decode(Book.zip.getFile(ncxPath) || new Uint8Array());
                 var nvRx = /<navPoint[^>]*>([\s\S]*?)<\/navPoint>/gi, nvPt;
                 while ((nvPt = nvRx.exec(ncxStr)) !== null) {
-                    var tM  = nvPt[1].match(/<text>([\s\S]*?)<\/text>/i);
-                    var sM  = nvPt[1].match(/<content\s+src="([^"]+)"/i);
+                    var tM = nvPt[1].match(/<text>([\s\S]*?)<\/text>/i), sM = nvPt[1].match(/<content\s+src="([^"]+)"/i);
                     if (tM && sM) {
-                        var cs2 = sM[1].split('#')[0];
-                        var fs2 = resolvePath(dirName(ncxPath), cs2);
+                        var fs2 = resolvePath(dirName(ncxPath), sM[1].split('#')[0]);
                         if (!Book.tocMap[fs2]) Book.tocMap[fs2] = tM[1].replace(/[\r\n]+/g, ' ').trim();
                     }
                 }
             }
 
-            // Spine: idref order from manifest
             Book.spine = [];
-            var idrefs = [], m;
-            var irefRx = /<itemref\s+idref="([^"]+)"/gi;
+            var idrefs = [], m, irefRx = /<itemref\s+idref="([^"]+)"/gi;
             while ((m = irefRx.exec(opfStr)) !== null) idrefs.push(m[1]);
-
-            var manifest = {};
-            var itemRx  = /<item\s+[^>]*id="([^"]+)"\s+href="([^"]+)"/gi;
-            while ((m = itemRx.exec(opfStr))    !== null) manifest[m[1]] = m[2];
+            var manifest = {}, itemRx = /<item\s+[^>]*id="([^"]+)"\s+href="([^"]+)"/gi;
+            while ((m = itemRx.exec(opfStr)) !== null) manifest[m[1]] = m[2];
             var itemRx2 = /<item\s+[^>]*href="([^"]+)"\s+id="([^"]+)"/gi;
-            while ((m = itemRx2.exec(opfStr))   !== null) manifest[m[2]] = m[1];
-
+            while ((m = itemRx2.exec(opfStr)) !== null) manifest[m[2]] = m[1];
             idrefs.forEach(function (ref) { if (manifest[ref]) Book.spine.push(resolvePath(Book.baseDir, manifest[ref])); });
-
-            if (Book.spine.length === 0) {
-                var hrefs = opfStr.match(/href="([^"]+\.xhtml|[^"]+\.html)"/gi);
-                if (hrefs) hrefs.forEach(function (h) {
-                    var fullP = resolvePath(Book.baseDir, h.substring(6, h.length - 1));
-                    if (Book.spine.indexOf(fullP) === -1) Book.spine.push(fullP);
-                });
-            }
 
             Book.currentIndex = record.lastChapter || 0;
             navigate('READER');
@@ -801,344 +716,320 @@ function openBook(id) {
     });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PERF: loadSpineItem
-   - load-generation guard prevents stale callbacks
-   - image conversion batched via requestIdleCallback (with rAF fallback)
-   - RAF double-frame replaces fragile setTimeout(50) for layout settling
-═══════════════════════════════════════════════════════════ */
 function loadSpineItem(index, targetPage, cb) {
     if (index < 0 || index >= Book.spine.length) return;
     Book.currentIndex = index;
-
-    var myGen = ++_loadGen; // invalidates any earlier pending callback
-
-    var path = Book.spine[index];
-    var raw  = Book.zip.getFile(path);
+    var myGen = ++_loadGen;
+    var path = Book.spine[index], raw = Book.zip.getFile(path);
     if (!raw) { if (cb) cb(); return; }
 
-    var htmlStr     = utf8Decode(raw);
-    var bodyContent = htmlStr;
-    var bodyStart   = htmlStr.indexOf('<body');
+    var htmlStr = utf8Decode(raw), bodyContent = htmlStr, bodyStart = htmlStr.indexOf('<body');
     if (bodyStart !== -1) {
-        var bodyClose = htmlStr.indexOf('>', bodyStart);
-        var bodyEnd   = htmlStr.lastIndexOf('</body>');
+        var bodyClose = htmlStr.indexOf('>', bodyStart), bodyEnd = htmlStr.lastIndexOf('</body>');
         if (bodyEnd !== -1) bodyContent = htmlStr.substring(bodyClose + 1, bodyEnd);
     }
-
-    var contentEl = _elContent; // PERF B: cached ref
-    contentEl.innerHTML = bodyContent;
+    _elContent.innerHTML = bodyContent;
 
     var currentBaseDir = dirName(path);
-
-    // Collect all image elements that need converting
-    var imgs    = Array.prototype.slice.call(contentEl.getElementsByTagName('img'));
-    var svgImgs = Array.prototype.slice.call(contentEl.getElementsByTagName('image'));
+    var imgs = Array.prototype.slice.call(_elContent.getElementsByTagName('img'));
+    var svgImgs = Array.prototype.slice.call(_elContent.getElementsByTagName('image'));
 
     function resolveImg(el, src, isSvg) {
         if (!src) return;
-        var cleanSrc  = src.split('#')[0];
-        var fullPath  = resolvePath(currentBaseDir, cleanSrc);
-
-        // Hit the per-session image cache first
+        var fullPath = resolvePath(currentBaseDir, src.split('#')[0]);
         if (_imgCache.has(fullPath)) {
             var cached = _imgCache.get(fullPath);
             if (isSvg) { el.setAttribute('href', cached); el.setAttributeNS('http://www.w3.org/1999/xlink', 'href', cached); }
-            else        { el.src = cached; }
+            else { el.src = cached; }
             return;
         }
-
         var imgRaw = Book.zip.getFile(fullPath);
         if (!imgRaw) return;
-        var mime = fullPath.toLowerCase().indexOf('.png') !== -1 ? 'image/png' :
-                   fullPath.toLowerCase().indexOf('.gif') !== -1 ? 'image/gif' : 'image/jpeg';
-        var b64  = 'data:' + mime + ';base64,' + bytesToBase64(imgRaw);
+        var mime = fullPath.toLowerCase().indexOf('.png') !== -1 ? 'image/png' : fullPath.toLowerCase().indexOf('.gif') !== -1 ? 'image/gif' : 'image/jpeg';
+        var b64 = 'data:' + mime + ';base64,' + bytesToBase64(imgRaw);
         _imgCache.set(fullPath, b64);
-        if (isSvg) { el.setAttribute('href', b64); el.setAttributeNS('http://www.w3.org/1999/xlink', 'href', b64); }
-        else        { el.src = b64; }
+        if (isSvg) { el.setAttribute('href', b64); el.setAttributeNS('http://www.w3.org/1999/xlink', 'href', b64); } else { el.src = b64; }
     }
 
-    // PERF: process images in idle-time slices so they don't block the first
-    // paint. requestIdleCallback is used when available; falls back to rAF.
     var allImgWork = [];
-    imgs.forEach(function (el) {
-        allImgWork.push({ el: el, src: el.getAttribute('src'), isSvg: false });
-    });
-    svgImgs.forEach(function (el) {
-        allImgWork.push({ el: el, src: el.getAttribute('href') || el.getAttribute('xlink:href'), isSvg: true });
-    });
+    imgs.forEach(function (el) { allImgWork.push({ el: el, src: el.getAttribute('src'), isSvg: false }); });
+    svgImgs.forEach(function (el) { allImgWork.push({ el: el, src: el.getAttribute('href') || el.getAttribute('xlink:href'), isSvg: true }); });
 
     var workIdx = 0;
     function processNextImage(deadline) {
-        if (myGen !== _loadGen) return; // stale — newer chapter loaded
+        if (myGen !== _loadGen) return;
         while (workIdx < allImgWork.length) {
             var item = allImgWork[workIdx++];
             resolveImg(item.el, item.src, item.isSvg);
-            // If we have a deadline and it's about to expire, yield
-            if (deadline && deadline.timeRemaining && deadline.timeRemaining() < 2 && workIdx < allImgWork.length) {
-                scheduleIdle(processNextImage);
-                return;
-            }
+            if (deadline && deadline.timeRemaining && deadline.timeRemaining() < 2 && workIdx < allImgWork.length) { scheduleIdle(processNextImage); return; }
         }
     }
+    function scheduleIdle(fn) { if (typeof requestIdleCallback !== 'undefined') requestIdleCallback(fn, { timeout: 300 }); else requestAnimationFrame(fn); }
 
-    function scheduleIdle(fn) {
-        if (typeof requestIdleCallback !== 'undefined') requestIdleCallback(fn, { timeout: 300 });
-        else requestAnimationFrame(fn);
-    }
-
-    // PERF: RAF double-frame to let the browser complete layout before reading
-    // scrollWidth (single rAF fires before paint; double fires after).
     requestAnimationFrame(function () {
         requestAnimationFrame(function () {
             if (myGen !== _loadGen) return;
-
-            // Start image processing in idle time after layout is known
             scheduleIdle(processNextImage);
-
             updateReaderWidthVar();
-            var viewWidth = getViewWidth();
-            var totalWidth = contentEl.scrollWidth;
-            var maxPages   = Math.ceil(totalWidth / viewWidth) || 1;
-
-            if (targetPage === -1) {
-                currentPageIndex = Math.max(0, maxPages - 1);
-            } else if (targetPage && typeof targetPage === 'object' && typeof targetPage.ratio === 'number') {
-                currentPageIndex = Math.min(maxPages - 1, Math.max(0, Math.round(targetPage.ratio * maxPages)));
-            } else {
-                currentPageIndex = (typeof targetPage === 'number' && targetPage > 0) ? Math.min(targetPage, maxPages - 1) : 0;
-            }
-
-            contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
+            var viewWidth = getViewWidth(), totalWidth = _elContent.scrollWidth, maxPages = Math.ceil(totalWidth / viewWidth) || 1;
+            if (targetPage === -1) { currentPageIndex = Math.max(0, maxPages - 1); } 
+            else if (targetPage && typeof targetPage === 'object' && typeof targetPage.ratio === 'number') { currentPageIndex = Math.min(maxPages - 1, Math.max(0, Math.round(targetPage.ratio * maxPages))); } 
+            else { currentPageIndex = (typeof targetPage === 'number' && targetPage > 0) ? Math.min(targetPage, maxPages - 1) : 0; }
+            _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
             updateProgress();
             if (cb) cb();
         });
     });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   VIEWPORT / ROTATION
-═══════════════════════════════════════════════════════════ */
 function getViewWidth() {
-    // PERF C: use cached wrapper ref; fallback to getElementById if called before initApp
     var w = _elWrapper || document.getElementById('wrapper');
     var rotated = w.className.indexOf('rotate-left') !== -1 || w.className.indexOf('rotate-right') !== -1;
     return rotated ? window.innerHeight : window.innerWidth;
 }
-function updateReaderWidthVar() {
-    document.documentElement.style.setProperty('--reader-width', getViewWidth() + 'px');
-}
+function updateReaderWidthVar() { document.documentElement.style.setProperty('--reader-width', getViewWidth() + 'px'); }
 
-/* ═══════════════════════════════════════════════════════════
-   PAGINATION
-═══════════════════════════════════════════════════════════ */
 function nextPage() {
-    var viewWidth = getViewWidth();
-    var maxPages  = Math.ceil(_elContent.scrollWidth / viewWidth);
-    if (currentPageIndex < maxPages - 1) {
-        currentPageIndex++;
-        _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
-        updateProgress();
-    } else if (Book.currentIndex < Book.spine.length - 1) {
-        showLoading('Loading…');
-        loadSpineItem(Book.currentIndex + 1, 0, function () { showLoading(false); });
-    }
+    var viewWidth = getViewWidth(), maxPages = Math.ceil(_elContent.scrollWidth / viewWidth);
+    if (currentPageIndex < maxPages - 1) { currentPageIndex++; _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)'; updateProgress(); } 
+    else if (Book.currentIndex < Book.spine.length - 1) { showLoading('Loading…'); loadSpineItem(Book.currentIndex + 1, 0, function () { showLoading(false); }); }
 }
 function prevPage() {
     var viewWidth = getViewWidth();
-    if (currentPageIndex > 0) {
-        currentPageIndex--;
-        _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
-        updateProgress();
-    } else if (Book.currentIndex > 0) {
-        showLoading('Loading…');
-        loadSpineItem(Book.currentIndex - 1, -1, function () { showLoading(false); });
-    }
+    if (currentPageIndex > 0) { currentPageIndex--; _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)'; updateProgress(); } 
+    else if (Book.currentIndex > 0) { showLoading('Loading…'); loadSpineItem(Book.currentIndex - 1, -1, function () { showLoading(false); }); }
 }
 
 function updateProgress() {
-    // PERF B: use cached element refs; PERF H: textContent avoids layout trigger vs innerText
-    var viewWidth = getViewWidth();
-    var maxPages  = Math.ceil(_elContent.scrollWidth / viewWidth) || 1;
-    if (currentPageIndex >= maxPages) {
-        currentPageIndex = Math.max(0, maxPages - 1);
-        _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
-    }
-    var chProgress = (Book.currentIndex / Math.max(1, Book.spine.length)) * 100;
-    var pgProgress = (currentPageIndex  / maxPages) * (100 / Math.max(1, Book.spine.length));
-    var totalPct   = Math.min(100, Math.floor(chProgress + pgProgress));
-    _elProgressBar.style.width      = totalPct + '%';
-    var chTitle = Book.tocMap[Book.spine[Book.currentIndex]] || ('Chapter ' + (Book.currentIndex + 1));
-    _elChapterTitle.textContent = chTitle;
-    _elProgressPct.textContent  = totalPct + '%';
-    // PERF A: debounce IDB write — coalesces rapid page-flip saves into one
+    var viewWidth = getViewWidth(), maxPages = Math.ceil(_elContent.scrollWidth / viewWidth) || 1;
+    if (currentPageIndex >= maxPages) { currentPageIndex = Math.max(0, maxPages - 1); _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)'; }
+    var totalPct = Math.min(100, Math.floor(((Book.currentIndex / Math.max(1, Book.spine.length)) * 100) + ((currentPageIndex / maxPages) * (100 / Math.max(1, Book.spine.length)))));
+    _elProgressBar.style.width = totalPct + '%';
+    _elChapterTitle.textContent = Book.tocMap[Book.spine[Book.currentIndex]] || ('Chapter ' + (Book.currentIndex + 1));
+    _elProgressPct.textContent = totalPct + '%';
     if (Book.id) scheduleSaveProgress(Book.id, Book.currentIndex, currentPageIndex);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   BOOK ACTIONS
-═══════════════════════════════════════════════════════════ */
 function closeBook() { navigate('HOME'); Book.id = null; }
-
 function confirmDeleteBook() {
     if (!Book.id) return;
     if (!confirm('Delete "' + (Book.title || 'this book') + '"? This also removes its bookmarks and cannot be undone.')) return;
     showLoading('Deleting…');
-    var deletedId = Book.id;
-    DB.deleteBook(deletedId, function () {
+    DB.deleteBook(Book.id, function () {
         showLoading(false);
-        Book.id = null; Book.zip = null; Book.spine = []; Book.tocMap = {}; Book.title = '';
-        _imgCache = new Map();
-        navigate('HOME');
+        Book.id = null; Book.zip = null; Book.spine = []; Book.tocMap = {}; Book.title = ''; _imgCache = new Map(); navigate('HOME');
     });
 }
 
+/* ═══════════════════════════════════════════════════════════
+   ACCORDION MENU & NAVIGATION
+═══════════════════════════════════════════════════════════ */
+function toggleAccordion(id) {
+    var sec = document.getElementById(id);
+    var isHidden = sec.classList.contains('hidden');
+    
+    // Collapse all sections
+    var allSections = document.querySelectorAll('.menu-section');
+    allSections.forEach(function(s) { s.classList.add('hidden'); });
+    
+    // Expand the clicked one if it was hidden
+    if (isHidden) {
+        sec.classList.remove('hidden');
+        var firstBtn = sec.querySelector('.menu-item');
+        if (firstBtn) firstBtn.focus();
+    }
+}
+
 function showTOCScreen() {
-    var listEl = document.getElementById('tocList');
-    // PERF: DocumentFragment instead of innerHTML string
-    var frag = document.createDocumentFragment();
+    var listEl = document.getElementById('tocList'), frag = document.createDocumentFragment();
     for (var i = 0; i < Book.spine.length; i++) {
-        var title = Book.tocMap[Book.spine[i]] || ('Chapter ' + (i + 1));
-        var a     = document.createElement('a');
-        a.href    = '#';
-        if (i === Book.currentIndex) a.className = 'active-chapter';
+        var a = document.createElement('a'); a.href = '#'; if (i === Book.currentIndex) a.className = 'active-chapter';
         var numSp = document.createElement('span'); numSp.className = 'toc-num'; numSp.textContent = (i + 1) + '.';
-        var titSp = document.createElement('span'); titSp.className = 'toc-title'; titSp.textContent = title;
+        var titSp = document.createElement('span'); titSp.className = 'toc-title'; titSp.textContent = Book.tocMap[Book.spine[i]] || ('Chapter ' + (i + 1));
         a.appendChild(numSp); a.appendChild(titSp);
         (function (idx) { a.addEventListener('click', function (e) { e.preventDefault(); jumpToSpine(idx); }); })(i);
         frag.appendChild(a);
     }
-    listEl.innerHTML = '';
-    listEl.appendChild(frag);
-    navigate('TOC');
-    // PERF F: rAF replaces setTimeout(50) — fires after the screen is visible
-    requestAnimationFrame(function () {
-        var active = listEl.querySelector('.active-chapter') || listEl.querySelector('a');
-        if (active) active.focus();
-    });
+    listEl.innerHTML = ''; listEl.appendChild(frag); navigate('TOC');
+    requestAnimationFrame(function () { var active = listEl.querySelector('.active-chapter') || listEl.querySelector('a'); if (active) active.focus(); });
 }
-
-function jumpToSpine(idx) {
-    showLoading('Jumping…');
-    Book.currentIndex   = idx;
-    pendingReaderTarget = 0;
-    navigate('READER');
-}
+function jumpToSpine(idx) { showLoading('Jumping…'); Book.currentIndex = idx; pendingReaderTarget = 0; navigate('READER'); }
 
 function showBookmarksScreen() {
     DB.getNotes(Book.id, function (notes) {
-        var listEl = document.getElementById('notesList');
-        var frag   = document.createDocumentFragment();
+        var listEl = document.getElementById('notesList'), frag = document.createDocumentFragment();
         notes.forEach(function (n) {
-            var spinePath = Book.spine[n.chapter];
-            var chTitle   = Book.tocMap[spinePath] || ('Chapter ' + (n.chapter + 1));
-            var pct       = Math.round((n.pageOffset || 0) * 100);
-            var a = document.createElement('a');
-            a.href = '#'; a.className = 'menu-item';
-            var strong = document.createElement('strong'); strong.textContent = chTitle + ' (' + pct + '%)';
-            var br     = document.createElement('br');
-            var span   = document.createElement('span');
-            span.style.cssText = 'opacity:0.7;font-size:11px;display:block;margin-top:4px;';
-            span.textContent = n.text;
-            a.appendChild(strong); a.appendChild(br); a.appendChild(span);
+            var a = document.createElement('a'); a.href = '#'; a.className = 'menu-item';
+            var strong = document.createElement('strong'); strong.textContent = (Book.tocMap[Book.spine[n.chapter]] || ('Chapter ' + (n.chapter + 1))) + ' (' + Math.round((n.pageOffset || 0) * 100) + '%)';
+            var span = document.createElement('span'); span.style.cssText = 'opacity:0.7;font-size:11px;display:block;margin-top:4px;'; span.textContent = n.text;
+            a.appendChild(strong); a.appendChild(document.createElement('br')); a.appendChild(span);
             (function (ch, ratio) { a.addEventListener('click', function (e) { e.preventDefault(); jumpToBookmark(ch, ratio); }); })(n.chapter, n.pageOffset);
             frag.appendChild(a);
         });
-        listEl.innerHTML = '';
-        if (notes.length === 0) {
-            listEl.innerHTML = '<div style="padding:25px;text-align:center;opacity:0.6;font-size:12px;">No bookmarks added.</div>';
-        } else {
-            listEl.appendChild(frag);
-        }
-        navigate('NOTES');
-        var first = listEl.querySelector('a');
-        if (first) first.focus();
+        listEl.innerHTML = notes.length === 0 ? '<div style="padding:25px;text-align:center;opacity:0.6;font-size:12px;">No bookmarks added.</div>' : '';
+        if (notes.length > 0) listEl.appendChild(frag);
+        navigate('NOTES'); var first = listEl.querySelector('a'); if (first) first.focus();
     });
 }
-
-function jumpToBookmark(ch, ratio) {
-    showLoading('Jumping…');
-    Book.currentIndex   = ch;
-    pendingReaderTarget = { ratio: ratio };
-    navigate('READER');
-}
-
+function jumpToBookmark(ch, ratio) { showLoading('Jumping…'); Book.currentIndex = ch; pendingReaderTarget = { ratio: ratio }; navigate('READER'); }
 function addBookmark() {
-    var contentEl  = _elContent; // PERF B
-    var sampleText = contentEl.textContent.substring(0, 50).trim() + '…'; // PERF H: textContent
-    var viewWidth  = getViewWidth();
-    var maxPages   = Math.ceil(contentEl.scrollWidth / viewWidth) || 1;
-    var pageRatio  = maxPages > 1 ? (currentPageIndex / maxPages) : 0;
-    DB.saveNote(Book.id, Book.currentIndex, pageRatio, sampleText, function () {
-        alert('Bookmark Saved!');
-        history.back();
-    });
+    var maxPages = Math.ceil(_elContent.scrollWidth / getViewWidth()) || 1;
+    DB.saveNote(Book.id, Book.currentIndex, maxPages > 1 ? (currentPageIndex / maxPages) : 0, _elContent.textContent.substring(0, 50).trim() + '…', function () { alert('Bookmark Saved!'); history.back(); });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TYPOGRAPHY & ROTATION
-   PERF: adjustTextSize uses RAF double-frame for reflow,
-   same as loadSpineItem, avoiding the fragile 60ms timeout.
-═══════════════════════════════════════════════════════════ */
 function adjustTextSize(delta) {
-    var contentEl = _elContent || document.getElementById('content'); // PERF B
-    if (!contentEl) return;
-    var viewWidth        = getViewWidth();
-    var totalWidthBefore = contentEl.scrollWidth;
-    var maxPagesBefore   = Math.ceil(totalWidthBefore / viewWidth) || 1;
-    var ratio            = maxPagesBefore > 1 ? (currentPageIndex / maxPagesBefore) : 0;
-
+    if (!_elContent) return;
+    var viewWidth = getViewWidth(), maxPagesBefore = Math.ceil(_elContent.scrollWidth / viewWidth) || 1, ratio = maxPagesBefore > 1 ? (currentPageIndex / maxPagesBefore) : 0;
     currentFontSize = Math.max(8, Math.min(48, currentFontSize + delta));
     localStorage.setItem('epub_fontsize', currentFontSize);
-    contentEl.style.fontSize = currentFontSize + 'px';
-
-    requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-            var totalWidthAfter = contentEl.scrollWidth;
-            var maxPagesAfter   = Math.ceil(totalWidthAfter / viewWidth) || 1;
-            currentPageIndex    = Math.min(maxPagesAfter - 1, Math.max(0, Math.round(ratio * maxPagesAfter)));
-            contentEl.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
-            updateProgress();
-        });
-    });
+    _elContent.style.fontSize = currentFontSize + 'px';
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+        var maxPagesAfter = Math.ceil(_elContent.scrollWidth / viewWidth) || 1;
+        currentPageIndex = Math.min(maxPagesAfter - 1, Math.max(0, Math.round(ratio * maxPagesAfter)));
+        _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)'; updateProgress();
+    }); });
 }
 
 function setRotation(dir) {
-    var w = _elWrapper || document.getElementById('wrapper'); // PERF C
-    if (dir === 'left')  { w.className = w.className === 'rotate-left'  ? '' : 'rotate-left';  }
-    else                 { w.className = w.className === 'rotate-right' ? '' : 'rotate-right'; }
-    // PERF E: double-rAF lets the CSS transform + layout fully settle before measuring
-    requestAnimationFrame(function () {
-        requestAnimationFrame(function () { updateReaderWidthVar(); adjustTextSize(0); });
-    });
+    var w = _elWrapper || document.getElementById('wrapper');
+    if (dir === 'left') { w.className = w.className === 'rotate-left' ? '' : 'rotate-left'; } 
+    else { w.className = w.className === 'rotate-right' ? '' : 'rotate-right'; }
+    requestAnimationFrame(function () { requestAnimationFrame(function () { updateReaderWidthVar(); adjustTextSize(0); }); });
 }
-
-function scrollScreen(amount) {
-    var map = { HOME: 'homeScreen', MENU: 'menuOverlay', TOC: 'tocScreen', NOTES: 'notesScreen' };
-    var el  = map[uiState] ? document.getElementById(map[uiState]) : null;
-    if (el) el.scrollTop += amount;
-}
-
-function setTheme(t) {
-    localStorage.setItem('epub_theme', t);
-    document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t);
-    history.back();
-}
-function setFontFam(f) {
-    localStorage.setItem('epub_font', f);
-    document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f);
-    requestAnimationFrame(function () { requestAnimationFrame(function () { adjustTextSize(0); }); });
-    history.back();
-}
+function scrollScreen(amount) { var map = { HOME: 'homeScreen', MENU: 'menuOverlay', TOC: 'tocScreen', NOTES: 'notesScreen' }, el = map[uiState] ? document.getElementById(map[uiState]) : null; if (el) el.scrollTop += amount; }
+function setTheme(t) { localStorage.setItem('epub_theme', t); document.body.className = document.body.className.replace(/theme-\S+/g, 'theme-' + t); history.back(); }
+function setFontFam(f) { localStorage.setItem('epub_font', f); document.body.className = document.body.className.replace(/font-\S+/g, 'font-' + f); requestAnimationFrame(function () { requestAnimationFrame(function () { adjustTextSize(0); }); }); history.back(); }
 
 /* ═══════════════════════════════════════════════════════════
-   HARDWARE KEY LISTENER (unchanged logic, just reformatted)
+   RSVP SPEED READER LOGIC
+═══════════════════════════════════════════════════════════ */
+function startRSVP() {
+    var rawText = _elContent.innerText; 
+    if(!rawText) rawText = _elContent.textContent; // Fallback
+    
+    // Clean string to simple space-separated words array
+    rsvpState.words = rawText.replace(/\s+/g, ' ').split(' ').filter(function(w) { return w.length > 0; });
+    if (rsvpState.words.length === 0) { alert("No text to read on this page."); return; }
+
+    var viewWidth = getViewWidth();
+    var maxPages = Math.ceil(_elContent.scrollWidth / viewWidth) || 1;
+    var wordsPerPage = Math.ceil(rsvpState.words.length / maxPages);
+
+    var startIndex = currentPageIndex * wordsPerPage;
+    rsvpState.pageEndIndex = Math.min(rsvpState.words.length, startIndex + wordsPerPage);
+    rsvpState.index = startIndex;
+    rsvpState.active = true;
+    
+    navigate('RSVP');
+}
+
+function exitRSVP() {
+    if (rsvpState.timer) { clearInterval(rsvpState.timer); rsvpState.timer = null; }
+    rsvpState.active = false;
+
+    // Sync main reader
+    var viewWidth = getViewWidth();
+    var maxPages = Math.ceil(_elContent.scrollWidth / viewWidth) || 1;
+    var wordsPerPage = Math.ceil(rsvpState.words.length / maxPages);
+    
+    currentPageIndex = Math.floor(rsvpState.index / wordsPerPage);
+    if (currentPageIndex >= maxPages) currentPageIndex = maxPages - 1;
+
+    _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewWidth) + 'px)';
+    updateProgress();
+    
+    history.back(); // Returns to previous state (MENU)
+}
+
+function toggleRSVPPlay() {
+    if (rsvpState.timer) {
+        clearInterval(rsvpState.timer);
+        rsvpState.timer = null;
+        document.getElementById('rsvpStatus').textContent = 'PAUSED - ' + rsvpState.wpm + ' WPM';
+    } else {
+        // If mode is per page and we reached the end, reset limits for next page chunk
+        if (rsvpState.mode === 'page' && rsvpState.index >= rsvpState.pageEndIndex) {
+            var viewWidth = getViewWidth();
+            var maxPages = Math.ceil(_elContent.scrollWidth / viewWidth) || 1;
+            var wordsPerPage = Math.ceil(rsvpState.words.length / maxPages);
+            rsvpState.pageEndIndex = Math.min(rsvpState.words.length, rsvpState.index + wordsPerPage);
+        }
+        
+        if (rsvpState.index >= rsvpState.words.length - 1) return; // At end
+        var interval = 60000 / rsvpState.wpm;
+        rsvpState.timer = setInterval(advanceRSVP, interval);
+        document.getElementById('rsvpStatus').textContent = 'PLAYING - ' + rsvpState.wpm + ' WPM';
+    }
+}
+
+function advanceRSVP() {
+    if (rsvpState.index >= rsvpState.words.length - 1) {
+        toggleRSVPPlay(); // pause
+        return;
+    }
+    if (rsvpState.mode === 'page' && rsvpState.index >= rsvpState.pageEndIndex - 1) {
+        toggleRSVPPlay(); // auto-pause at end of current page equivalent
+    }
+    rsvpState.index++;
+    updateRSVPDisplay();
+}
+
+function updateRSVPDisplay() {
+    var wordEl = document.getElementById('rsvpWord');
+    var progEl = document.getElementById('rsvpProgress');
+    
+    if (rsvpState.index < rsvpState.words.length) {
+        wordEl.textContent = rsvpState.words[rsvpState.index];
+    } else {
+        wordEl.textContent = "End";
+    }
+    var pct = (rsvpState.index / rsvpState.words.length) * 100;
+    progEl.style.width = pct + '%';
+}
+
+function adjustRSVPSpeed(delta) {
+    rsvpState.wpm = Math.max(50, Math.min(1000, rsvpState.wpm + delta));
+    localStorage.setItem('epub_rsvp_wpm', rsvpState.wpm);
+    if (rsvpState.timer) {
+        toggleRSVPPlay(); // pause
+        toggleRSVPPlay(); // restart with new speed
+    } else {
+        document.getElementById('rsvpStatus').textContent = 'PAUSED - ' + rsvpState.wpm + ' WPM';
+    }
+}
+
+function toggleRSVPMode() {
+    rsvpState.mode = rsvpState.mode === 'continuous' ? 'page' : 'continuous';
+    localStorage.setItem('epub_rsvp_mode', rsvpState.mode);
+    document.getElementById('rsvpModeToggle').textContent = 'Mode: ' + (rsvpState.mode === 'continuous' ? 'Continuous' : 'Per Page');
+}
+
+function updateRSVPSize() {
+    var rsvpFontSize = Math.floor(currentFontSize * 2);
+    document.getElementById('rsvpWord').style.fontSize = rsvpFontSize + 'px';
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   HARDWARE KEY LISTENER
 ═══════════════════════════════════════════════════════════ */
 window.addEventListener('keydown', function (e) {
-
+    // Global Back Handling
     if (e.key === 'SoftRight' || e.key === 'Backspace' || e.key === 'Escape') {
         if (document.activeElement.tagName === 'INPUT') return;
+        if (uiState === 'RSVP') { e.preventDefault(); exitRSVP(); return; }
         if (uiState !== 'HOME') { e.preventDefault(); history.back(); return; }
+    }
+
+    // RSVP Reader Controls
+    if (uiState === 'RSVP') {
+        if (e.key === 'Enter' || e.key === 'Ok') { e.preventDefault(); toggleRSVPPlay(); return; }
+        if (e.key === '7') { e.preventDefault(); adjustRSVPSpeed(-25); return; }
+        if (e.key === '9') { e.preventDefault(); adjustRSVPSpeed(25); return; }
+        if (e.key === '*') { e.preventDefault(); adjustTextSize(-2); updateRSVPSize(); return; }
+        if (e.key === '#') { e.preventDefault(); adjustTextSize(2); updateRSVPSize(); return; }
+        if (e.key === '0') { e.preventDefault(); exitRSVP(); return; }
+        return; // Capture everything else to prevent accidental scrolling
     }
 
     if (uiState === 'READER') {
@@ -1147,12 +1038,9 @@ window.addEventListener('keydown', function (e) {
     }
 
     if (uiState === 'HOME' && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-        var listEl      = document.getElementById('homeList');
-        var cards       = Array.prototype.slice.call(listEl.querySelectorAll('.book-card')).filter(function (el) { return el.offsetWidth > 0 || el.offsetHeight > 0; });
-        var tabRecent   = document.getElementById('tabBtn-recent');
-        var tabUploaded = document.getElementById('tabBtn-uploaded');
-        var uploadBtn   = document.getElementById('uploadBtn');
-        var active      = document.activeElement;
+        var listEl = document.getElementById('homeList');
+        var cards = Array.prototype.slice.call(listEl.querySelectorAll('.book-card')).filter(function (el) { return el.offsetWidth > 0 || el.offsetHeight > 0; });
+        var tabRecent = document.getElementById('tabBtn-recent'), tabUploaded = document.getElementById('tabBtn-uploaded'), uploadBtn = document.getElementById('uploadBtn'), active = document.activeElement;
 
         if (active === tabRecent || active === tabUploaded) {
             e.preventDefault();
@@ -1173,10 +1061,7 @@ window.addEventListener('keydown', function (e) {
         if      (e.key === 'ArrowRight') cards[Math.min(cards.length - 1, idx + 1)].focus();
         else if (e.key === 'ArrowLeft')  cards[Math.max(0, idx - 1)].focus();
         else if (e.key === 'ArrowDown')  cards[Math.min(cards.length - 1, idx + GRID_COLS)].focus();
-        else if (e.key === 'ArrowUp') {
-            if (idx < GRID_COLS) uploadBtn.focus();
-            else cards[idx - GRID_COLS].focus();
-        }
+        else if (e.key === 'ArrowUp') { if (idx < GRID_COLS) uploadBtn.focus(); else cards[idx - GRID_COLS].focus(); }
         return;
     }
 
@@ -1185,7 +1070,8 @@ window.addEventListener('keydown', function (e) {
         var container = containerMap[uiState] ? document.getElementById(containerMap[uiState]) : null;
         if (container) {
             e.preventDefault();
-            var focusable = Array.prototype.slice.call(container.querySelectorAll('a, button, input'))
+            // Important: Now includes .menu-header explicitly so we can jump over headers, and naturally excludes items inside .hidden
+            var focusable = Array.prototype.slice.call(container.querySelectorAll('a, button, input, .menu-header'))
                               .filter(function (el) { return el.offsetWidth > 0 || el.offsetHeight > 0; });
             if (focusable.length > 0) {
                 var ci = focusable.indexOf(document.activeElement);
