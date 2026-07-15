@@ -56,6 +56,7 @@ input[type=file] { display:none; }
 #readerScreen { width:100%;height:100%;overflow:hidden;position:relative; }
 #content { height:calc(100% - 32px);margin:10px 10px 22px 10px;box-sizing:border-box;column-width:calc(var(--reader-width) - 20px);column-gap:20px;column-fill:auto;word-wrap:break-word;overflow-wrap:break-word;text-align:left;line-height:1.6; }
 #content img,#content svg { max-width:100%;height:auto;max-height:calc(100vh - 40px);object-fit:contain;display:block;margin:5px auto; }
+bionic-wrap b { font-weight:800; }
 
 #readerFooter { position:fixed;bottom:2px;left:0;width:100%;height:20px;display:flex;justify-content:space-between;align-items:center;padding:0 10px;box-sizing:border-box;font-size:10px;font-weight:400;z-index:998;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 #chapterTitleDisplay { text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:80%; }
@@ -67,7 +68,6 @@ input[type=file] { display:none; }
 .menu-item-danger { font-weight:500;letter-spacing:0.5px; }
 .menu-item-danger::before { content:"\26A0  "; }
 
-/* Accordion Styling */
 .menu-header { font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:1px; background:rgba(128,128,128,0.1); border-bottom:2px solid var(--border-color); }
 .menu-header::after { content: ' ▼'; font-size:9px; float:right; opacity:0.6; margin-top:3px; }
 .menu-header.active-header::after { content: ' ▲'; }
@@ -79,29 +79,24 @@ input[type=file] { display:none; }
 #tocList a .toc-title { flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 #tocList a.active-chapter { font-weight:500;border-left:3px solid var(--fg-color);padding-left:9px; }
 
-/* RSVP/Speed Reader UI & Themes */
+/* Speed Reader UI & Themes */
 #rsvpScreen { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); color:var(--fg-color); z-index:2500; display:flex; flex-direction:column; }
 .rsvp-topbar { padding:8px; font-size:11px; border-bottom:1px solid var(--border-color); text-align:center; opacity:0.8; text-transform:uppercase; letter-spacing:1px; display:flex; justify-content:space-between; }
 .rsvp-stage { flex:1; display:flex; align-items:center; justify-content:center; padding:15px; overflow:hidden; }
 .rsvp-footer { padding:8px; font-size:9px; border-top:1px solid var(--border-color); text-align:center; opacity:0.7; line-height:1.4; }
 
 .rsvp-plain { font-size:28px; font-weight:500; text-align:center; }
-.rsvp-focus { display:flex; width:100%; align-items:center; font-size:26px; font-family:monospace; }
-.rsvp-left { flex:1; text-align:right; }
-.rsvp-center { color:red; font-weight:700; width:1ch; text-align:center; }
+.rsvp-focus { display:flex; width:100%; align-items:center; justify-content:center; font-size:26px; font-family:monospace; }
+.rsvp-left { flex:1 1 0; text-align:right; }
+.rsvp-center { flex:0 0 auto; color:red; font-weight:700; text-align:center; }
 body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
-.rsvp-right { flex:1; text-align:left; }
+.rsvp-right { flex:1 1 0; text-align:left; }
 
-/* Teleprompter CSS Updates */
-.rsvp-tele { display:flex; width:100%; align-items:center; justify-content:center; font-size:16px; line-height:1.8; overflow:hidden; }
-.rsvp-tele-left { flex:1 1 50%; display:flex; justify-content:flex-end; align-items:center; overflow:hidden; }
-.rsvp-tele-left span { margin-left:6px; flex-shrink:0; opacity:0.5; }
-.rsvp-tele-right { flex:1 1 50%; display:flex; justify-content:flex-start; align-items:center; overflow:hidden; }
-.rsvp-tele-right span { margin-right:6px; flex-shrink:0; opacity:0.5; }
-.rsvp-tele-center { flex:0 0 auto; opacity:1; font-weight:700; color:var(--bg-color); background:var(--fg-color); padding:0 5px; border-radius:3px; font-size:20px; margin:0 5px; }
-
-.rsvp-bionic { font-size:26px; }
-.rsvp-bionic b { font-weight:800; }
+/* 2D Teleprompter Blurb Styles */
+.rsvp-tele-stage { position: relative; width: 100%; height: 160px; overflow: hidden; background: rgba(0,0,0,0.03); border-radius: 8px; border: 1px solid var(--border-color); }
+body.theme-dark .rsvp-tele-stage { background: rgba(255,255,255,0.05); }
+.rsvp-tele-content { position: absolute; left: 50%; top: 50%; width: 220px; text-align: center; font-size: 16px; line-height: 1.8; }
+.rsvp-tele-center { font-weight: 700; color: var(--bg-color); background: var(--fg-color); padding: 2px 6px; border-radius: 4px; display: inline-block; }
 
 #loading { padding:16px; font-size:12px; text-align:center; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:70%; font-weight:400; text-transform:uppercase; letter-spacing:1px; z-index:3000; background:var(--bg-color); color:var(--fg-color); border:1px solid var(--border-color); }
 
@@ -149,7 +144,7 @@ body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
   <div class="rsvp-stage" id="rsvpStage"></div>
   <div class="rsvp-footer">
     [Enter] Play/Pause &nbsp; | &nbsp; [5] Chapters<br>
-    [7/9] Speed &nbsp; | &nbsp; [2/8] Theme &nbsp; | &nbsp; [0] Exit
+    [Up/Down] Speed &nbsp; | &nbsp; [Left/Right] Theme &nbsp; | &nbsp; [0] Exit
   </div>
 </div>
 
@@ -163,6 +158,7 @@ body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
   <a href="#" class="menu-item menu-header" onclick="toggleMenu('menu-group-2', this); return false;">Reading Mode</a>
   <div id="menu-group-2" class="menu-group">
     <a href="#" class="menu-item" onclick="startRSVP(); return false;">Start Speed Reader</a>
+    <a href="#" class="menu-item" onclick="toggleBionic(); return false;" id="bionicToggleBtn">Bionic Reader: OFF</a>
   </div>
 
   <a href="#" class="menu-item menu-header" onclick="toggleMenu('menu-group-3', this); return false;">Tools</a>
@@ -504,6 +500,7 @@ function applyScreenState(state) {
             loadSpineItem(Book.currentIndex, target, function () { showLoading(false); });
         }
     } else if (state === 'MENU') {
+        updateMenuLabels();
         document.getElementById('readerScreen').className = '';
         document.getElementById('menuOverlay').className  = '';
         var activeH = document.querySelector('.active-header');
@@ -526,6 +523,7 @@ var currentTab          = 'recent';
 var GRID_COLS           = 3;
 var currentPageIndex    = 0;
 var pendingReaderTarget = null;
+var bionicEnabled       = false;
 
 var _imgCache = new Map();
 var _loadGen = 0;
@@ -550,6 +548,7 @@ function loadSettings() {
     var theme = localStorage.getItem('epub_theme') || 'light';
     var font  = localStorage.getItem('epub_font')  || 'default';
     var fSize = localStorage.getItem('epub_fontsize');
+    bionicEnabled = localStorage.getItem('epub_bionic') === 'true';
     document.body.className = 'theme-' + theme + ' font-' + font;
     if (fSize) currentFontSize = parseInt(fSize, 10);
 }
@@ -655,6 +654,84 @@ function showFullTitle(el) { document.getElementById('homeHeader').innerText = e
 function resetHomeHeader() { document.getElementById('homeHeader').innerText = 'My Library'; }
 
 /* ═══════════════════════════════════════════════════════════
+   BIONIC & GRAPHEME ENGINE
+═══════════════════════════════════════════════════════════ */
+function getClusters(w) {
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        try {
+            var seg = new Intl.Segmenter(undefined, {granularity: 'grapheme'});
+            var arr = [];
+            for (var s of seg.segment(w)) arr.push(s.segment);
+            return arr;
+        } catch(e) {}
+    }
+    // Fallback Indic Grapheme awareness
+    var arr = [];
+    for (var i = 0; i < w.length; i++) {
+        var c = w[i];
+        var code = w.charCodeAt(i);
+        if (code >= 0xD800 && code <= 0xDBFF && i + 1 < w.length) { c += w[++i]; }
+        while (i + 1 < w.length) {
+            var nCode = w.charCodeAt(i + 1);
+            if (nCode === 0x09CD || nCode === 0x200D) { // Virama/Hasant + ZWJ
+                c += w[++i];
+                if (i + 1 < w.length) c += w[++i]; 
+            } else if ((nCode >= 0x09BE && nCode <= 0x09CC) || nCode === 0x09BC || nCode === 0x09D7 || (nCode >= 0x09E2 && nCode <= 0x09E3) || (nCode >= 0x0300 && nCode <= 0x036F)) {
+                c += w[++i]; // Vowels & modifiers
+            } else { break; }
+        }
+        arr.push(c);
+    }
+    return arr;
+}
+
+function applyBionicToDOM(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    
+    for (var n = 0; n < nodes.length; n++) {
+        var node = nodes[n];
+        var text = node.nodeValue;
+        if (!text.trim()) continue;
+        if (node.parentNode && (node.parentNode.tagName === 'SCRIPT' || node.parentNode.tagName === 'STYLE' || node.parentNode.classList.contains('bionic-wrap'))) continue;
+
+        var parts = text.split(/([a-zA-Z0-9\u0980-\u09FF]+)/);
+        if (parts.length <= 1) continue; 
+
+        var span = document.createElement('span');
+        span.className = 'bionic-wrap';
+        var html = '';
+        for (var i = 0; i < parts.length; i++) {
+            var part = parts[i];
+            if (/[a-zA-Z0-9\u0980-\u09FF]/.test(part)) {
+                var clusters = getClusters(part);
+                if (clusters.length <= 1) {
+                    html += '<b>' + part + '</b>';
+                } else {
+                    var bLen = Math.ceil(clusters.length / 2);
+                    html += '<b>' + clusters.slice(0, bLen).join('') + '</b>' + clusters.slice(bLen).join('');
+                }
+            } else {
+                html += part.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+        }
+        span.innerHTML = html;
+        node.parentNode.replaceChild(span, node);
+    }
+}
+
+function toggleBionic() {
+    bionicEnabled = !bionicEnabled;
+    localStorage.setItem('epub_bionic', bionicEnabled);
+    showLoading('Applying...');
+    loadSpineItem(Book.currentIndex, currentPageIndex, function(){
+        showLoading(false);
+        navigate('READER');
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════
    OPEN BOOK — OPF PARSE
 ═══════════════════════════════════════════════════════════ */
 function openBook(id) {
@@ -725,8 +802,11 @@ function loadSpineItem(index, targetPage, cb) {
 
     var contentEl = _elContent;
     contentEl.innerHTML = bodyContent;
-    var currentBaseDir = dirName(path);
+    
+    // Apply Bionic DOM walker if globally toggled on
+    if (bionicEnabled) applyBionicToDOM(contentEl);
 
+    var currentBaseDir = dirName(path);
     var imgs = Array.prototype.slice.call(contentEl.getElementsByTagName('img'));
     var svgImgs = Array.prototype.slice.call(contentEl.getElementsByTagName('image'));
 
@@ -874,6 +954,11 @@ function toggleMenu(groupId, headerEl) {
     });
 }
 
+function updateMenuLabels() {
+    var bBtn = document.getElementById('bionicToggleBtn');
+    if(bBtn) bBtn.innerText = bionicEnabled ? 'Bionic Reader: ON' : 'Bionic Reader: OFF';
+}
+
 function adjustTextSize(delta) {
     if (!_elContent) return;
     var viewW = getViewWidth(), maxPagesBefore = Math.ceil(_elContent.scrollWidth / viewW) || 1, ratio = maxPagesBefore > 1 ? (currentPageIndex / maxPagesBefore) : 0;
@@ -900,40 +985,8 @@ function setFontFam(f) { localStorage.setItem('epub_font', f); document.body.cla
    SPEED READER ENGINE
 ═══════════════════════════════════════════════════════════ */
 var rsvp = { active: false, words: [], index: 0, timer: null, wpm: 300, isPlaying: false, theme: 1 };
-var rsvpThemes = ['plain', 'focus', 'tele', 'bionic'];
-var rsvpThemeNames = ['Plain Text', 'Center Focus', 'Teleprompter', 'Bionic Reading'];
-
-function getClusters(w) {
-    // Attempt standard Intl API
-    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-        try {
-            var seg = new Intl.Segmenter(undefined, {granularity: 'grapheme'});
-            var arr = [];
-            for (var s of seg.segment(w)) arr.push(s.segment);
-            return arr;
-        } catch(e) {}
-    }
-    // Fallback for KaiOS and missing Segmenter parsing Indic Scripts perfectly
-    var arr = [];
-    for (var i = 0; i < w.length; i++) {
-        var c = w[i];
-        var code = w.charCodeAt(i);
-        if (code >= 0xD800 && code <= 0xDBFF && i + 1 < w.length) { c += w[++i]; }
-        while (i + 1 < w.length) {
-            var nCode = w.charCodeAt(i + 1);
-            if (nCode === 0x09CD) { // Virama/Hasant - Combine with next character for complex conjuncts
-                c += w[++i];
-                if (i + 1 < w.length) c += w[++i]; 
-            } else if ((nCode >= 0x09BE && nCode <= 0x09CC) || nCode === 0x09BC || nCode === 0x09D7 || (nCode >= 0x09E2 && nCode <= 0x09E3) || (nCode >= 0x0300 && nCode <= 0x036F)) {
-                c += w[++i]; // Modifiers & Vowel marks
-            } else {
-                break;
-            }
-        }
-        arr.push(c);
-    }
-    return arr;
-}
+var rsvpThemes = ['plain', 'focus', 'tele'];
+var rsvpThemeNames = ['Plain Text', 'Center Focus', 'Teleprompter'];
 
 function startRSVP() {
     var text = (_elContent.innerText || _elContent.textContent).replace(/[\r\n]+/g, ' ').trim();
@@ -1004,25 +1057,27 @@ function renderRSVP() {
         stage.innerHTML = '<div class="rsvp-focus"><div class="rsvp-left">' + left + '</div><div class="rsvp-center">' + mid + '</div><div class="rsvp-right">' + right + '</div></div>';
     } 
     else if (t === 'tele') {
-        var start = Math.max(0, rsvp.index - 5);
-        var end = Math.min(rsvp.words.length, rsvp.index + 6);
+        // Build 2D Blurb mapping around center
+        var start = Math.max(0, rsvp.index - 25);
+        var end = Math.min(rsvp.words.length, rsvp.index + 25);
         
-        var leftHtml = '', rightHtml = '';
-        for(var i = start; i < rsvp.index; i++) leftHtml += '<span>' + rsvp.words[i] + '</span> ';
-        for(var i = rsvp.index + 1; i < end; i++) rightHtml += ' <span>' + rsvp.words[i] + '</span>';
+        var html = '';
+        for(var i = start; i < end; i++) {
+            if(i === rsvp.index) html += '<span id="rsvpTeleCenter" class="rsvp-tele-center">' + rsvp.words[i] + '</span> ';
+            else html += '<span style="opacity:0.5;">' + rsvp.words[i] + '</span> ';
+        }
         
-        var centerHtml = '<span class="rsvp-tele-center">' + rsvp.words[rsvp.index] + '</span>';
+        stage.innerHTML = '<div class="rsvp-tele-stage"><div id="teleContent" class="rsvp-tele-content">' + html + '</div></div>';
         
-        stage.innerHTML = '<div class="rsvp-tele">' + 
-                            '<div class="rsvp-tele-left">' + leftHtml + '</div>' + 
-                            centerHtml + 
-                            '<div class="rsvp-tele-right">' + rightHtml + '</div>' + 
-                          '</div>';
+        // Transform the parent viewport back perfectly opposite to keeping the active word perfectly centered
+        var tCenter = document.getElementById('rsvpTeleCenter');
+        var tContent = document.getElementById('teleContent');
+        if (tCenter && tContent) {
+            var cLeft = tCenter.offsetLeft + (tCenter.offsetWidth / 2);
+            var cTop = tCenter.offsetTop + (tCenter.offsetHeight / 2);
+            tContent.style.transform = 'translate(' + (-cLeft) + 'px, ' + (-cTop) + 'px)';
+        }
     } 
-    else if (t === 'bionic') {
-        var bLen = Math.ceil(w.length / 2);
-        stage.innerHTML = '<div class="rsvp-bionic"><b>' + w.substring(0, bLen) + '</b>' + w.substring(bLen) + '</div>';
-    }
 }
 
 function playRSVP() {
@@ -1063,10 +1118,10 @@ window.addEventListener('keydown', function (e) {
 
     if (uiState === 'RSVP') {
         if (e.key === 'Enter') { e.preventDefault(); togglePlayRSVP(); return; }
-        if (e.key === '7') { e.preventDefault(); changeRSVPSpeed(-25); return; }
-        if (e.key === '9') { e.preventDefault(); changeRSVPSpeed(25); return; }
-        if (e.key === '2') { e.preventDefault(); toggleRSVPTheme(1); return; }
-        if (e.key === '8') { e.preventDefault(); toggleRSVPTheme(-1); return; }
+        if (e.key === 'ArrowUp') { e.preventDefault(); changeRSVPSpeed(25); return; }
+        if (e.key === 'ArrowDown') { e.preventDefault(); changeRSVPSpeed(-25); return; }
+        if (e.key === 'ArrowRight') { e.preventDefault(); toggleRSVPTheme(1); return; }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); toggleRSVPTheme(-1); return; }
         if (e.key === '5') { e.preventDefault(); stopRSVP(); showTOCScreen(); return; }
         if (e.key === '0') { e.preventDefault(); stopRSVP(); return; }
         return; // Block default navigation keys while in Speed Reader Mode
@@ -1096,7 +1151,6 @@ window.addEventListener('keydown', function (e) {
         var containerMap = { MENU: 'menuOverlay', TOC: 'tocScreen', NOTES: 'notesScreen' }, container = containerMap[uiState] ? document.getElementById(containerMap[uiState]) : null;
         if (container) {
             e.preventDefault();
-            // Automatically naturally skips `display: none` sub-menus because `offsetWidth > 0` condition filters them out.
             var focusable = Array.prototype.slice.call(container.querySelectorAll('a, button, input')).filter(function (el) { return el.offsetWidth > 0; });
             if (focusable.length > 0) {
                 var ci = focusable.indexOf(document.activeElement);
