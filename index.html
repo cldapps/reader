@@ -96,13 +96,17 @@ body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
 .rsvp-right { flex:1 1 0; text-align:left; }
 
 /* 3-Line Snake Teleprompter Styles */
-.rsvp-tele-snake { display: flex; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; gap: 15px; font-size: 18px; font-family: sans-serif; overflow: hidden; box-sizing: border-box; }
-.tele-row { width: 100%; white-space: nowrap; text-overflow: clip; overflow: hidden; }
-.tele-row-1, .tele-row-3 { text-align: center; opacity: 0.4; }
-.tele-row-2 { display: flex; align-items: center; justify-content: center; width: 100%; }
-.tele-left { flex: 1 1 0; min-width: 0; text-align: right; opacity: 0.7; overflow: hidden; }
-.tele-focus { flex: 0 0 auto; font-weight: 400; color: inherit; background: rgba(255, 193, 7, 0.25); border: 1px solid rgba(255, 193, 7, 0.5); padding: 4px 10px; margin: 0 12px; border-radius: 4px; font-size: 22px; }
-.tele-right { flex: 1 1 0; min-width: 0; text-align: left; opacity: 0.7; overflow: hidden; }
+.rsvp-tele-snake { display: flex; flex-direction: column; width: 100%; margin: 0; gap: 15px; font-size: 18px; font-family: sans-serif; overflow: hidden; }
+.tele-row { width: 100%; display: flex; overflow: hidden; box-sizing: border-box; }
+.tele-row-1, .tele-row-3 { justify-content: center; opacity: 0.4; }
+.tele-row-1 span, .tele-row-3 span { white-space: nowrap; }
+.tele-row-2 { align-items: center; justify-content: center; gap: 12px; }
+.tele-left { flex: 1 1 0; min-width: 0; display: flex; justify-content: flex-end; opacity: 0.7; overflow: hidden; }
+.tele-left span { white-space: nowrap; }
+.tele-focus { flex: 0 0 auto; font-weight: 400; color: var(--fg-color); background: rgba(255, 193, 7, 0.2); border: 1px solid rgba(255, 193, 7, 0.4); padding: 6px 14px; border-radius: 4px; font-size: 22px; }
+body.theme-dark .tele-focus, body.theme-green .tele-focus, body.theme-sepia-dark .tele-focus { background: rgba(40, 167, 69, 0.2); border: 1px solid rgba(40, 167, 69, 0.4); }
+.tele-right { flex: 1 1 0; min-width: 0; display: flex; justify-content: flex-start; opacity: 0.7; overflow: hidden; }
+.tele-right span { white-space: nowrap; }
 
 #loading { padding:16px; font-size:12px; text-align:center; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:70%; font-weight:400; text-transform:uppercase; letter-spacing:1px; z-index:3000; background:var(--bg-color); color:var(--fg-color); border:1px solid var(--border-color); }
 
@@ -610,7 +614,7 @@ function setupFileUploadListener() {
                     var fullCover = resolvePath(baseDir, coverPath);
                     var coverRaw  = zip.getFile(fullCover);
                     if (coverRaw) {
-                        var mime = fullCover.toLowerCase().indexOf('.png') !== -1 ? 'image/png' : fullCover.toLowerCase().indexOf('.gif') !== -1 ? 'image/jpeg';
+                        var mime = fullCover.toLowerCase().indexOf('.png') !== -1 ? 'image/png' : fullCover.toLowerCase().indexOf('.gif') !== -1 ? 'image/gif' : 'image/jpeg';
                         coverBase64 = 'data:' + mime + ';base64,' + bytesToBase64(coverRaw);
                     }
                 }
@@ -1080,15 +1084,16 @@ function renderRSVP() {
         var l2Right = getWords(rsvp.index + 1, rsvp.index + 3);
         var line3 = getWords(rsvp.index + 4, rsvp.index + 8);
         
+        // Rendered with wrapped spans to securely prevent visual bleeding
         stage.innerHTML = 
             '<div class="rsvp-tele-snake">' +
-                '<div class="tele-row tele-row-1">' + line1 + '</div>' +
+                '<div class="tele-row tele-row-1"><span>' + line1 + '</span></div>' +
                 '<div class="tele-row tele-row-2">' +
-                    '<div class="tele-left">' + l2Left + '</div>' +
+                    '<div class="tele-left"><span>' + l2Left + '</span></div>' +
                     '<div class="tele-focus">' + l2Focus + '</div>' +
-                    '<div class="tele-right">' + l2Right + '</div>' +
+                    '<div class="tele-right"><span>' + l2Right + '</span></div>' +
                 '</div>' +
-                '<div class="tele-row tele-row-3">' + line3 + '</div>' +
+                '<div class="tele-row tele-row-3"><span>' + line3 + '</span></div>' +
             '</div>';
     } 
 }
