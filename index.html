@@ -56,7 +56,10 @@ input[type=file] { display:none; }
 #readerScreen { width:100%;height:100%;overflow:hidden;position:relative; }
 #content { height:calc(100% - 32px);margin:10px 10px 22px 10px;box-sizing:border-box;column-width:calc(var(--reader-width) - 20px);column-gap:20px;column-fill:auto;word-wrap:break-word;overflow-wrap:break-word;text-align:left;line-height:1.6; }
 #content img,#content svg { max-width:100%;height:auto;max-height:calc(100vh - 40px);object-fit:contain;display:block;margin:5px auto; }
+
+/* Bionic Reader Styles */
 bionic-wrap b { font-weight:800; }
+.bionic-dim { opacity: 0.55; }
 
 #readerFooter { position:fixed;bottom:2px;left:0;width:100%;height:20px;display:flex;justify-content:space-between;align-items:center;padding:0 10px;box-sizing:border-box;font-size:10px;font-weight:400;z-index:998;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 #chapterTitleDisplay { text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:80%; }
@@ -92,11 +95,14 @@ bionic-wrap b { font-weight:800; }
 body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
 .rsvp-right { flex:1 1 0; text-align:left; }
 
-/* 2D Teleprompter Blurb Styles */
-.rsvp-tele-stage { position: relative; width: 100%; height: 160px; overflow: hidden; background: rgba(0,0,0,0.03); border-radius: 8px; border: 1px solid var(--border-color); }
-body.theme-dark .rsvp-tele-stage { background: rgba(255,255,255,0.05); }
-.rsvp-tele-content { position: absolute; left: 50%; top: 50%; width: 220px; text-align: center; font-size: 16px; line-height: 1.8; }
-.rsvp-tele-center { font-weight: 700; color: var(--bg-color); background: var(--fg-color); padding: 2px 6px; border-radius: 4px; display: inline-block; }
+/* 3-Line Snake Teleprompter Styles */
+.rsvp-tele-snake { display: flex; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; gap: 15px; font-size: 18px; font-family: sans-serif; }
+.tele-row { width: 100%; white-space: nowrap; text-overflow: clip; }
+.tele-row-1, .tele-row-3 { text-align: center; opacity: 0.4; }
+.tele-row-2 { display: flex; align-items: center; justify-content: center; width: 100%; }
+.tele-left { flex: 1 1 0; min-width: 0; text-align: right; padding-right: 12px; opacity: 0.7; overflow: hidden; }
+.tele-focus { flex: 0 0 auto; font-weight: 700; color: var(--bg-color); background: var(--fg-color); padding: 6px 14px; border-radius: 8px; font-size: 22px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+.tele-right { flex: 1 1 0; min-width: 0; text-align: left; padding-left: 12px; opacity: 0.7; overflow: hidden; }
 
 #loading { padding:16px; font-size:12px; text-align:center; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:70%; font-weight:400; text-transform:uppercase; letter-spacing:1px; z-index:3000; background:var(--bg-color); color:var(--fg-color); border:1px solid var(--border-color); }
 
@@ -710,7 +716,8 @@ function applyBionicToDOM(root) {
                     html += '<b>' + part + '</b>';
                 } else {
                     var bLen = Math.ceil(clusters.length / 2);
-                    html += '<b>' + clusters.slice(0, bLen).join('') + '</b>' + clusters.slice(bLen).join('');
+                    // Dims the second half for full contrast across all font types
+                    html += '<b>' + clusters.slice(0, bLen).join('') + '</b><span class="bionic-dim">' + clusters.slice(bLen).join('') + '</span>';
                 }
             } else {
                 html += part.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1057,26 +1064,32 @@ function renderRSVP() {
         stage.innerHTML = '<div class="rsvp-focus"><div class="rsvp-left">' + left + '</div><div class="rsvp-center">' + mid + '</div><div class="rsvp-right">' + right + '</div></div>';
     } 
     else if (t === 'tele') {
-        // Build 2D Blurb mapping around center
-        var start = Math.max(0, rsvp.index - 25);
-        var end = Math.min(rsvp.words.length, rsvp.index + 25);
+        // Snake Teleprompter logic: Extracts rigid segments relative to the current index
+        var getWords = function(startIdx, endIdx) {
+            var arr = [];
+            for(var i = startIdx; i <= endIdx; i++) {
+                if(i >= 0 && i < rsvp.words.length) arr.push(rsvp.words[i]);
+            }
+            return arr.join(' ');
+        };
         
-        var html = '';
-        for(var i = start; i < end; i++) {
-            if(i === rsvp.index) html += '<span id="rsvpTeleCenter" class="rsvp-tele-center">' + rsvp.words[i] + '</span> ';
-            else html += '<span style="opacity:0.5;">' + rsvp.words[i] + '</span> ';
-        }
+        // Build the 3 lines strictly segmented around the focus word
+        var line1 = getWords(rsvp.index - 8, rsvp.index - 4);
+        var l2Left = getWords(rsvp.index - 3, rsvp.index - 1);
+        var l2Focus = getWords(rsvp.index, rsvp.index);
+        var l2Right = getWords(rsvp.index + 1, rsvp.index + 3);
+        var line3 = getWords(rsvp.index + 4, rsvp.index + 8);
         
-        stage.innerHTML = '<div class="rsvp-tele-stage"><div id="teleContent" class="rsvp-tele-content">' + html + '</div></div>';
-        
-        // Transform the parent viewport back perfectly opposite to keeping the active word perfectly centered
-        var tCenter = document.getElementById('rsvpTeleCenter');
-        var tContent = document.getElementById('teleContent');
-        if (tCenter && tContent) {
-            var cLeft = tCenter.offsetLeft + (tCenter.offsetWidth / 2);
-            var cTop = tCenter.offsetTop + (tCenter.offsetHeight / 2);
-            tContent.style.transform = 'translate(' + (-cLeft) + 'px, ' + (-cTop) + 'px)';
-        }
+        stage.innerHTML = 
+            '<div class="rsvp-tele-snake">' +
+                '<div class="tele-row tele-row-1">' + line1 + '</div>' +
+                '<div class="tele-row tele-row-2">' +
+                    '<div class="tele-left">' + l2Left + '</div>' +
+                    '<div class="tele-focus">' + l2Focus + '</div>' +
+                    '<div class="tele-right">' + l2Right + '</div>' +
+                '</div>' +
+                '<div class="tele-row tele-row-3">' + line3 + '</div>' +
+            '</div>';
     } 
 }
 
