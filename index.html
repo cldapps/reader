@@ -61,18 +61,25 @@ input[type=file] { display:none; }
 #chapterTitleDisplay { text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:80%; }
 #progressBar { position:fixed;bottom:0;left:0;height:2px;background:var(--fg-color);width:0%;z-index:999; }
 
+/* Menus & Accordion */
 #menuOverlay { position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-color);color:var(--fg-color);z-index:1000;overflow-y:auto; }
 .menu-item { display:block;padding:14px 12px;border-bottom:1px solid var(--border-color);color:inherit;text-decoration:none;font-size:13px;font-weight:400; }
 .menu-item-danger { font-weight:500;letter-spacing:0.5px; }
 .menu-item-danger::before { content:"\26A0  "; }
-.menu-header { font-size:11px;color:var(--fg-color);padding:20px 12px 6px 12px;font-weight:500;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-color); }
+
+/* Accordion Styling */
+.menu-header { font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:1px; background:rgba(128,128,128,0.1); border-bottom:2px solid var(--border-color); }
+.menu-header::after { content: ' ▼'; font-size:9px; float:right; opacity:0.6; margin-top:3px; }
+.menu-header.active-header::after { content: ' ▲'; }
+.menu-group { display:none; }
+.menu-group.expanded { display:block; }
 
 #tocList a { display:flex;padding:10px 12px;border-bottom:1px solid var(--border-color);color:inherit;text-decoration:none;font-size:13px;line-height:1.4; }
 #tocList a .toc-num { flex:0 0 auto;min-width:26px;font-weight:400;opacity:0.7; }
 #tocList a .toc-title { flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 #tocList a.active-chapter { font-weight:500;border-left:3px solid var(--fg-color);padding-left:9px; }
 
-/* RSVP UI & Themes */
+/* RSVP/Speed Reader UI & Themes */
 #rsvpScreen { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); color:var(--fg-color); z-index:2500; display:flex; flex-direction:column; }
 .rsvp-topbar { padding:8px; font-size:11px; border-bottom:1px solid var(--border-color); text-align:center; opacity:0.8; text-transform:uppercase; letter-spacing:1px; display:flex; justify-content:space-between; }
 .rsvp-stage { flex:1; display:flex; align-items:center; justify-content:center; padding:15px; overflow:hidden; }
@@ -85,8 +92,13 @@ input[type=file] { display:none; }
 body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
 .rsvp-right { flex:1; text-align:left; }
 
-.rsvp-tele { font-size:16px; line-height:1.8; text-align:center; opacity:0.6; display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
-.rsvp-tele span.active { opacity:1; font-weight:700; color:var(--bg-color); background:var(--fg-color); padding:0 5px; border-radius:3px; font-size:20px; }
+/* Teleprompter CSS Updates */
+.rsvp-tele { display:flex; width:100%; align-items:center; justify-content:center; font-size:16px; line-height:1.8; overflow:hidden; }
+.rsvp-tele-left { flex:1 1 50%; display:flex; justify-content:flex-end; align-items:center; overflow:hidden; }
+.rsvp-tele-left span { margin-left:6px; flex-shrink:0; opacity:0.5; }
+.rsvp-tele-right { flex:1 1 50%; display:flex; justify-content:flex-start; align-items:center; overflow:hidden; }
+.rsvp-tele-right span { margin-right:6px; flex-shrink:0; opacity:0.5; }
+.rsvp-tele-center { flex:0 0 auto; opacity:1; font-weight:700; color:var(--bg-color); background:var(--fg-color); padding:0 5px; border-radius:3px; font-size:20px; margin:0 5px; }
 
 .rsvp-bionic { font-size:26px; }
 .rsvp-bionic b { font-weight:800; }
@@ -136,34 +148,51 @@ body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
   </div>
   <div class="rsvp-stage" id="rsvpStage"></div>
   <div class="rsvp-footer">
-    [5] Play/Pause &nbsp; | &nbsp; [0] Exit<br>
-    [4/6] Speed &nbsp; | &nbsp; [2/8] Theme
+    [Enter] Play/Pause &nbsp; | &nbsp; [5] Chapters<br>
+    [7/9] Speed &nbsp; | &nbsp; [2/8] Theme &nbsp; | &nbsp; [0] Exit
   </div>
 </div>
 
 <div id="menuOverlay" class="hidden">
-  <div class="menu-header">Menu Options</div>
-  <a href="#" class="menu-item" id="menuFirstItem" onclick="history.back(); return false;">Resume Reading</a>
-  <a href="#" class="menu-item" onclick="closeBook(); return false;">Exit to Library</a>
-  <div class="menu-header">Reading Mode</div>
-  <a href="#" class="menu-item" onclick="startRSVP(); return false;">Start RSVP Reader</a>
-  <div class="menu-header">Tools</div>
-  <a href="#" class="menu-item" onclick="addBookmark(); return false;">Add Bookmark Here</a>
-  <a href="#" class="menu-item" onclick="showBookmarksScreen(); return false;">View Bookmarks</a>
-  <div class="menu-header">Theme</div>
-  <a href="#" class="menu-item" onclick="setTheme('light');      return false;">Light</a>
-  <a href="#" class="menu-item" onclick="setTheme('sepia');      return false;">Sepia</a>
-  <a href="#" class="menu-item" onclick="setTheme('sepia-dark'); return false;">Sepia Dark</a>
-  <a href="#" class="menu-item" onclick="setTheme('dark');        return false;">Dark</a>
-  <a href="#" class="menu-item" onclick="setTheme('green');       return false;">Terminal Green</a>
-  <div class="menu-header">Typography</div>
-  <a href="#" class="menu-item" onclick="setFontFam('default');  return false;">Publisher Default</a>
-  <a href="#" class="menu-item" onclick="setFontFam('serif-en'); return false;">Merriweather (Serif)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('sans-en');  return false;">Roboto (Sans)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('serif-bn'); return false;">Tiro Bangla (BN)</a>
-  <a href="#" class="menu-item" onclick="setFontFam('sans-bn');  return false;">Hind Siliguri (BN)</a>
-  <div class="menu-header">Danger Zone</div>
-  <a href="#" class="menu-item menu-item-danger" onclick="confirmDeleteBook(); return false;">Delete This Book</a>
+  <a href="#" class="menu-item menu-header active-header" onclick="toggleMenu('menu-group-1', this); return false;">Menu Options</a>
+  <div id="menu-group-1" class="menu-group expanded">
+    <a href="#" class="menu-item" id="menuFirstItem" onclick="history.back(); return false;">Resume Reading</a>
+    <a href="#" class="menu-item" onclick="closeBook(); return false;">Exit to Library</a>
+  </div>
+
+  <a href="#" class="menu-item menu-header" onclick="toggleMenu('menu-group-2', this); return false;">Reading Mode</a>
+  <div id="menu-group-2" class="menu-group">
+    <a href="#" class="menu-item" onclick="startRSVP(); return false;">Start Speed Reader</a>
+  </div>
+
+  <a href="#" class="menu-item menu-header" onclick="toggleMenu('menu-group-3', this); return false;">Tools</a>
+  <div id="menu-group-3" class="menu-group">
+    <a href="#" class="menu-item" onclick="addBookmark(); return false;">Add Bookmark Here</a>
+    <a href="#" class="menu-item" onclick="showBookmarksScreen(); return false;">View Bookmarks</a>
+  </div>
+
+  <a href="#" class="menu-item menu-header" onclick="toggleMenu('menu-group-4', this); return false;">Theme</a>
+  <div id="menu-group-4" class="menu-group">
+    <a href="#" class="menu-item" onclick="setTheme('light');      return false;">Light</a>
+    <a href="#" class="menu-item" onclick="setTheme('sepia');      return false;">Sepia</a>
+    <a href="#" class="menu-item" onclick="setTheme('sepia-dark'); return false;">Sepia Dark</a>
+    <a href="#" class="menu-item" onclick="setTheme('dark');        return false;">Dark</a>
+    <a href="#" class="menu-item" onclick="setTheme('green');       return false;">Terminal Green</a>
+  </div>
+
+  <a href="#" class="menu-item menu-header" onclick="toggleMenu('menu-group-5', this); return false;">Typography</a>
+  <div id="menu-group-5" class="menu-group">
+    <a href="#" class="menu-item" onclick="setFontFam('default');  return false;">Publisher Default</a>
+    <a href="#" class="menu-item" onclick="setFontFam('serif-en'); return false;">Merriweather (Serif)</a>
+    <a href="#" class="menu-item" onclick="setFontFam('sans-en');  return false;">Roboto (Sans)</a>
+    <a href="#" class="menu-item" onclick="setFontFam('serif-bn'); return false;">Tiro Bangla (BN)</a>
+    <a href="#" class="menu-item" onclick="setFontFam('sans-bn');  return false;">Hind Siliguri (BN)</a>
+  </div>
+
+  <a href="#" class="menu-item menu-header" onclick="toggleMenu('menu-group-6', this); return false;">Danger Zone</a>
+  <div id="menu-group-6" class="menu-group">
+    <a href="#" class="menu-item menu-item-danger" onclick="confirmDeleteBook(); return false;">Delete This Book</a>
+  </div>
 </div>
 
 <div id="progressBar" class="hidden"></div>
@@ -477,8 +506,8 @@ function applyScreenState(state) {
     } else if (state === 'MENU') {
         document.getElementById('readerScreen').className = '';
         document.getElementById('menuOverlay').className  = '';
-        var m1 = document.getElementById('menuFirstItem');
-        if (m1) m1.focus();
+        var activeH = document.querySelector('.active-header');
+        if (activeH) activeH.focus();
     } else if (state === 'TOC') {
         document.getElementById('tocScreen').className = '';
     } else if (state === 'NOTES') {
@@ -818,10 +847,31 @@ function showBookmarksScreen() {
         var first = listEl.querySelector('a'); if (first) first.focus();
     });
 }
-function jumpToBookmark(ch, ratio) { showLoading('Jumping…'); Book.currentIndex = ch; pendingReaderTarget = { ratio: ratio }; navigate('READER'); }
 function addBookmark() {
     var maxPages = Math.ceil(_elContent.scrollWidth / getViewWidth()) || 1;
     DB.saveNote(Book.id, Book.currentIndex, maxPages > 1 ? (currentPageIndex / maxPages) : 0, _elContent.textContent.substring(0, 50).trim() + '…', function () { alert('Bookmark Saved!'); history.back(); });
+}
+
+function toggleMenu(groupId, headerEl) {
+    var groups = document.querySelectorAll('.menu-group');
+    var headers = document.querySelectorAll('.menu-header');
+    
+    groups.forEach(function(g) {
+        if (g.id === groupId) {
+            var isExpanded = g.classList.contains('expanded');
+            g.classList.toggle('expanded', !isExpanded);
+        } else {
+            g.classList.remove('expanded');
+        }
+    });
+
+    headers.forEach(function(h) {
+        if (h === headerEl) {
+            h.classList.toggle('active-header', document.getElementById(groupId).classList.contains('expanded'));
+        } else {
+            h.classList.remove('active-header');
+        }
+    });
 }
 
 function adjustTextSize(delta) {
@@ -847,11 +897,43 @@ function setFontFam(f) { localStorage.setItem('epub_font', f); document.body.cla
 
 
 /* ═══════════════════════════════════════════════════════════
-   RSVP READING ENGINE
+   SPEED READER ENGINE
 ═══════════════════════════════════════════════════════════ */
 var rsvp = { active: false, words: [], index: 0, timer: null, wpm: 300, isPlaying: false, theme: 1 };
 var rsvpThemes = ['plain', 'focus', 'tele', 'bionic'];
 var rsvpThemeNames = ['Plain Text', 'Center Focus', 'Teleprompter', 'Bionic Reading'];
+
+function getClusters(w) {
+    // Attempt standard Intl API
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        try {
+            var seg = new Intl.Segmenter(undefined, {granularity: 'grapheme'});
+            var arr = [];
+            for (var s of seg.segment(w)) arr.push(s.segment);
+            return arr;
+        } catch(e) {}
+    }
+    // Fallback for KaiOS and missing Segmenter parsing Indic Scripts perfectly
+    var arr = [];
+    for (var i = 0; i < w.length; i++) {
+        var c = w[i];
+        var code = w.charCodeAt(i);
+        if (code >= 0xD800 && code <= 0xDBFF && i + 1 < w.length) { c += w[++i]; }
+        while (i + 1 < w.length) {
+            var nCode = w.charCodeAt(i + 1);
+            if (nCode === 0x09CD) { // Virama/Hasant - Combine with next character for complex conjuncts
+                c += w[++i];
+                if (i + 1 < w.length) c += w[++i]; 
+            } else if ((nCode >= 0x09BE && nCode <= 0x09CC) || nCode === 0x09BC || nCode === 0x09D7 || (nCode >= 0x09E2 && nCode <= 0x09E3) || (nCode >= 0x0300 && nCode <= 0x036F)) {
+                c += w[++i]; // Modifiers & Vowel marks
+            } else {
+                break;
+            }
+        }
+        arr.push(c);
+    }
+    return arr;
+}
 
 function startRSVP() {
     var text = (_elContent.innerText || _elContent.textContent).replace(/[\r\n]+/g, ' ').trim();
@@ -913,24 +995,29 @@ function renderRSVP() {
         stage.innerHTML = '<div class="rsvp-plain">' + w + '</div>';
     } 
     else if (t === 'focus') {
-        // Optimal Recognition Point Math
-        var orp = Math.floor((w.length - 1) / 2);
+        var clusters = getClusters(w);
+        var orp = Math.floor((clusters.length - 1) / 2);
         if (orp < 0) orp = 0;
-        var left = w.substring(0, orp);
-        var mid = w.substring(orp, orp + 1);
-        var right = w.substring(orp + 1);
+        var left = clusters.slice(0, orp).join('');
+        var mid = clusters[orp] || '';
+        var right = clusters.slice(orp + 1).join('');
         stage.innerHTML = '<div class="rsvp-focus"><div class="rsvp-left">' + left + '</div><div class="rsvp-center">' + mid + '</div><div class="rsvp-right">' + right + '</div></div>';
     } 
     else if (t === 'tele') {
         var start = Math.max(0, rsvp.index - 5);
         var end = Math.min(rsvp.words.length, rsvp.index + 6);
-        var html = '<div class="rsvp-tele">';
-        for(var i = start; i < end; i++) {
-            if (i === rsvp.index) html += '<span class="active">' + rsvp.words[i] + '</span>';
-            else html += '<span>' + rsvp.words[i] + '</span>';
-        }
-        html += '</div>';
-        stage.innerHTML = html;
+        
+        var leftHtml = '', rightHtml = '';
+        for(var i = start; i < rsvp.index; i++) leftHtml += '<span>' + rsvp.words[i] + '</span> ';
+        for(var i = rsvp.index + 1; i < end; i++) rightHtml += ' <span>' + rsvp.words[i] + '</span>';
+        
+        var centerHtml = '<span class="rsvp-tele-center">' + rsvp.words[rsvp.index] + '</span>';
+        
+        stage.innerHTML = '<div class="rsvp-tele">' + 
+                            '<div class="rsvp-tele-left">' + leftHtml + '</div>' + 
+                            centerHtml + 
+                            '<div class="rsvp-tele-right">' + rightHtml + '</div>' + 
+                          '</div>';
     } 
     else if (t === 'bionic') {
         var bLen = Math.ceil(w.length / 2);
@@ -975,13 +1062,14 @@ window.addEventListener('keydown', function (e) {
     }
 
     if (uiState === 'RSVP') {
-        if (e.key === '5' || e.key === 'Enter') { e.preventDefault(); togglePlayRSVP(); return; }
-        if (e.key === '4' || e.key === 'ArrowLeft') { e.preventDefault(); changeRSVPSpeed(-25); return; }
-        if (e.key === '6' || e.key === 'ArrowRight') { e.preventDefault(); changeRSVPSpeed(25); return; }
-        if (e.key === '2' || e.key === 'ArrowUp') { e.preventDefault(); toggleRSVPTheme(1); return; }
-        if (e.key === '8' || e.key === 'ArrowDown') { e.preventDefault(); toggleRSVPTheme(-1); return; }
+        if (e.key === 'Enter') { e.preventDefault(); togglePlayRSVP(); return; }
+        if (e.key === '7') { e.preventDefault(); changeRSVPSpeed(-25); return; }
+        if (e.key === '9') { e.preventDefault(); changeRSVPSpeed(25); return; }
+        if (e.key === '2') { e.preventDefault(); toggleRSVPTheme(1); return; }
+        if (e.key === '8') { e.preventDefault(); toggleRSVPTheme(-1); return; }
+        if (e.key === '5') { e.preventDefault(); stopRSVP(); showTOCScreen(); return; }
         if (e.key === '0') { e.preventDefault(); stopRSVP(); return; }
-        return; // Block default navigation keys while in RSVP Mode
+        return; // Block default navigation keys while in Speed Reader Mode
     }
 
     if (uiState === 'READER') {
@@ -1008,6 +1096,7 @@ window.addEventListener('keydown', function (e) {
         var containerMap = { MENU: 'menuOverlay', TOC: 'tocScreen', NOTES: 'notesScreen' }, container = containerMap[uiState] ? document.getElementById(containerMap[uiState]) : null;
         if (container) {
             e.preventDefault();
+            // Automatically naturally skips `display: none` sub-menus because `offsetWidth > 0` condition filters them out.
             var focusable = Array.prototype.slice.call(container.querySelectorAll('a, button, input')).filter(function (el) { return el.offsetWidth > 0; });
             if (focusable.length > 0) {
                 var ci = focusable.indexOf(document.activeElement);
