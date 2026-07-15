@@ -29,6 +29,13 @@ html,body { margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-famil
 .font-serif-bn  #content { font-family:'Tiro Bangla','Kalpurush',serif!important; }
 .font-sans-bn   #content { font-family:'Hind Siliguri','Siyam Rupali',sans-serif!important; }
 
+/* Let user styling adapt reader fonts and rsvp text sizes symmetrically */
+.font-default   #rsvpStage { font-family:inherit; }
+.font-serif-en  #rsvpStage { font-family:'Merriweather',Georgia,serif!important; }
+.font-sans-en   #rsvpStage { font-family:'Roboto',Arial,sans-serif!important; }
+.font-serif-bn  #rsvpStage { font-family:'Tiro Bangla','Kalpurush',serif!important; }
+.font-sans-bn   #rsvpStage { font-family:'Hind Siliguri','Siyam Rupali',sans-serif!important; }
+
 a:focus,button:focus,input:focus,.book-card:focus,.tab-btn:focus,.menu-item:focus { outline:none!important;background-color:var(--fg-color)!important;color:var(--bg-color)!important; }
 a:focus *,button:focus *,.book-card:focus * { color:var(--bg-color)!important; }
 
@@ -85,7 +92,7 @@ bionic-wrap b { font-weight:800; }
 /* Speed Reader UI & Themes */
 #rsvpScreen { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); color:var(--fg-color); z-index:2500; display:flex; flex-direction:column; }
 .rsvp-topbar { padding:8px; font-size:11px; border-bottom:1px solid var(--border-color); text-align:center; opacity:0.8; text-transform:uppercase; letter-spacing:1px; display:flex; justify-content:space-between; }
-.rsvp-stage { flex:1; display:flex; align-items:center; justify-content:center; padding:15px; overflow:hidden; }
+.rsvp-stage { flex:1; display:flex; align-items:center; justify-content:center; padding:15px; overflow:hidden; position:relative; }
 .rsvp-footer { padding:8px; font-size:9px; border-top:1px solid var(--border-color); text-align:center; opacity:0.7; line-height:1.4; }
 
 .rsvp-plain { font-size:28px; font-weight:500; text-align:center; }
@@ -107,6 +114,14 @@ body.theme-green .rsvp-center, body.theme-dark .rsvp-center { color:#ff6666; }
 body.theme-dark .tele-focus, body.theme-green .tele-focus, body.theme-sepia-dark .tele-focus { background: rgba(40, 167, 69, 0.2); border: 1px solid rgba(40, 167, 69, 0.4); }
 .tele-right { flex: 1 1 0; min-width: 0; display: flex; justify-content: flex-start; opacity: 0.7; overflow: hidden; }
 .tele-right span { white-space: nowrap; }
+
+/* NEW: Focus Slider CSS (5-6 Line Blurb + Word Focus Overlay) */
+.rsvp-focus-slider-container { width:100%; max-width:600px; padding:15px; box-sizing:border-box; text-align:left; line-height:1.8; position:relative; }
+.slider-blurb { margin:0; display:flex; flex-wrap:wrap; align-content:flex-start; row-gap:2px; column-gap:6px; position:relative; z-index:2; }
+.slider-word { display:inline-block; position:relative; cursor:pointer; font-weight:normal; }
+.slider-highlight-box { position:absolute; z-index:1; background:rgba(255, 193, 7, 0.3); border-radius:3px; transition:left 0.15s cubic-bezier(0.25, 0.8, 0.25, 1), top 0.15s cubic-bezier(0.25, 0.8, 0.25, 1), width 0.15s cubic-bezier(0.25, 0.8, 0.25, 1), height 0.15s cubic-bezier(0.25, 0.8, 0.25, 1); pointer-events:none; }
+body.theme-dark .slider-highlight-box, body.theme-green .slider-highlight-box { background:rgba(40, 167, 69, 0.35); }
+body.theme-sepia .slider-highlight-box { background:rgba(210, 105, 30, 0.25); }
 
 #loading { padding:16px; font-size:12px; text-align:center; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:70%; font-weight:400; text-transform:uppercase; letter-spacing:1px; z-index:3000; background:var(--bg-color); color:var(--fg-color); border:1px solid var(--border-color); }
 
@@ -197,7 +212,7 @@ body.theme-dark .tele-focus, body.theme-green .tele-focus, body.theme-sepia-dark
 
   <a href="#" class="menu-item menu-header" onclick="toggleMenu('menu-group-6', this); return false;">Danger Zone</a>
   <div id="menu-group-6" class="menu-group">
-    <a href="#" class="menu-item menu-item-danger" onclick="confirmDeleteBook(); return false;">Delete This Book</a>
+    <a href="#" class="menu-item" onclick="menu-item-danger" onclick="confirmDeleteBook(); return false;">Delete This Book</a>
   </div>
 </div>
 
@@ -976,10 +991,19 @@ function adjustTextSize(delta) {
     currentFontSize = Math.max(8, Math.min(48, currentFontSize + delta));
     localStorage.setItem('epub_fontsize', currentFontSize);
     _elContent.style.fontSize = currentFontSize + 'px';
+    
+    // Scale font inside speed reader synchronously too
+    var rsvpStage = document.getElementById('rsvpStage');
+    if (rsvpStage) { rsvpStage.style.fontSize = currentFontSize + 'px'; }
+
     requestAnimationFrame(function () { requestAnimationFrame(function () {
         var maxPagesAfter = Math.ceil(_elContent.scrollWidth / viewW) || 1;
         currentPageIndex = Math.min(maxPagesAfter - 1, Math.max(0, Math.round(ratio * maxPagesAfter)));
         _elContent.style.transform = 'translateX(' + (-currentPageIndex * viewW) + 'px)'; updateProgress();
+        // If speed reading Focus Slider is active, recalculate highlight box offsets instantly!
+        if (rsvp.active && rsvpThemes[rsvp.theme] === 'focusSlider') {
+            recalculateSliderPositions();
+        }
     }); });
 }
 function setRotation(dir) {
@@ -996,8 +1020,13 @@ function setFontFam(f) { localStorage.setItem('epub_font', f); document.body.cla
    SPEED READER ENGINE
 ═══════════════════════════════════════════════════════════ */
 var rsvp = { active: false, words: [], index: 0, timer: null, wpm: 300, isPlaying: false, theme: 1 };
-var rsvpThemes = ['plain', 'focus', 'tele'];
-var rsvpThemeNames = ['Plain Text', 'Center Focus', 'Teleprompter'];
+var rsvpThemes = ['plain', 'focus', 'tele', 'focusSlider'];
+var rsvpThemeNames = ['Plain Text', 'Center Focus', 'Teleprompter', 'Focus Slider'];
+
+// Store parsed blurb blocks and relative words
+var sliderBlurbs = []; // Array of arrays of words
+var currentBlurbIndex = -1; 
+var wordIndexInBlurb = -1; 
 
 function startRSVP() {
     var text = (_elContent.innerText || _elContent.textContent).replace(/[\r\n]+/g, ' ').trim();
@@ -1009,9 +1038,22 @@ function startRSVP() {
     var ratio = currentPageIndex / Math.max(1, maxP);
     rsvp.index = Math.floor(ratio * rsvp.words.length);
     
+    // Chunk words into distinct blurbs (50-60 words per blurb fits nicely into 5-6 lines on mobiles/phones)
+    sliderBlurbs = [];
+    var wordsPerBlurb = 45; 
+    for (var i = 0; i < rsvp.words.length; i += wordsPerBlurb) {
+        sliderBlurbs.push(rsvp.words.slice(i, i + wordsPerBlurb));
+    }
+    
+    // Resolve which block we are currently starting on
+    currentBlurbIndex = Math.floor(rsvp.index / wordsPerBlurb);
+    if (currentBlurbIndex >= sliderBlurbs.length) currentBlurbIndex = sliderBlurbs.length - 1;
+    wordIndexInBlurb = rsvp.index % wordsPerBlurb;
+
     rsvp.active = true;
     rsvp.isPlaying = true;
     navigate('RSVP');
+    document.getElementById('rsvpStage').style.fontSize = currentFontSize + 'px';
     renderRSVP();
     playRSVP();
 }
@@ -1034,6 +1076,25 @@ function stopRSVP() {
 function toggleRSVPTheme(dir) {
     rsvp.theme = (rsvp.theme + dir + rsvpThemes.length) % rsvpThemes.length;
     document.getElementById('rsvpThemeName').textContent = rsvpThemeNames[rsvp.theme];
+    
+    // Update structural variables if user toggled mid-playback
+    if (rsvpThemes[rsvp.theme] === 'focusSlider') {
+        var wordsPerBlurb = 45;
+        sliderBlurbs = [];
+        for (var i = 0; i < rsvp.words.length; i += wordsPerBlurb) {
+            sliderBlurbs.push(rsvp.words.slice(i, i + wordsPerBlurb));
+        }
+        currentBlurbIndex = Math.floor(rsvp.index / wordsPerBlurb);
+        if (currentBlurbIndex >= sliderBlurbs.length) currentBlurbIndex = sliderBlurbs.length - 1;
+        wordIndexInBlurb = rsvp.index % wordsPerBlurb;
+    } else {
+        // Sync index back from focusSlider coordinates
+        if (currentBlurbIndex !== -1) {
+            rsvp.index = (currentBlurbIndex * 45) + wordIndexInBlurb;
+            if (rsvp.index >= rsvp.words.length) rsvp.index = rsvp.words.length - 1;
+        }
+    }
+
     renderRSVP();
 }
 
@@ -1052,13 +1113,14 @@ function togglePlayRSVP() {
 function renderRSVP() {
     if (!rsvp.active) return;
     var stage = document.getElementById('rsvpStage');
-    var w = rsvp.words[rsvp.index] || "";
     var t = rsvpThemes[rsvp.theme];
 
     if (t === 'plain') {
+        var w = rsvp.words[rsvp.index] || "";
         stage.innerHTML = '<div class="rsvp-plain">' + w + '</div>';
     } 
     else if (t === 'focus') {
+        var w = rsvp.words[rsvp.index] || "";
         var clusters = getClusters(w);
         var orp = Math.floor((clusters.length - 1) / 2);
         if (orp < 0) orp = 0;
@@ -1068,7 +1130,6 @@ function renderRSVP() {
         stage.innerHTML = '<div class="rsvp-focus"><div class="rsvp-left">' + left + '</div><div class="rsvp-center">' + mid + '</div><div class="rsvp-right">' + right + '</div></div>';
     } 
     else if (t === 'tele') {
-        // Snake Teleprompter logic: Extracts rigid segments relative to the current index
         var getWords = function(startIdx, endIdx) {
             var arr = [];
             for(var i = startIdx; i <= endIdx; i++) {
@@ -1077,14 +1138,12 @@ function renderRSVP() {
             return arr.join(' ');
         };
         
-        // Build the 3 lines strictly segmented around the focus word
         var line1 = getWords(rsvp.index - 8, rsvp.index - 4);
         var l2Left = getWords(rsvp.index - 3, rsvp.index - 1);
         var l2Focus = getWords(rsvp.index, rsvp.index);
         var l2Right = getWords(rsvp.index + 1, rsvp.index + 3);
         var line3 = getWords(rsvp.index + 4, rsvp.index + 8);
         
-        // Rendered with wrapped spans to securely prevent visual bleeding
         stage.innerHTML = 
             '<div class="rsvp-tele-snake">' +
                 '<div class="tele-row tele-row-1"><span>' + line1 + '</span></div>' +
@@ -1096,28 +1155,89 @@ function renderRSVP() {
                 '<div class="tele-row tele-row-3"><span>' + line3 + '</span></div>' +
             '</div>';
     } 
+    else if (t === 'focusSlider') {
+        // Build block and span-wrap words without spaces or bolding modification
+        var blurbWords = sliderBlurbs[currentBlurbIndex];
+        if (!blurbWords) return;
+
+        var html = '<div class="rsvp-focus-slider-container">';
+        html += '<div class="slider-highlight-box" id="sliderHighlight"></div>';
+        html += '<div class="slider-blurb" id="sliderBlurbText">';
+        for (var i = 0; i < blurbWords.length; i++) {
+            html += '<span class="slider-word" id="sw-' + i + '">' + blurbWords[i] + '</span>';
+        }
+        html += '</div></div>';
+        stage.innerHTML = html;
+
+        // Animate highlight box offsets to focus target word
+        recalculateSliderPositions();
+    }
+}
+
+function recalculateSliderPositions() {
+    if (!rsvp.active || rsvpThemes[rsvp.theme] !== 'focusSlider') return;
+    var activeWordEl = document.getElementById('sw-' + wordIndexInBlurb);
+    var highlightBox = document.getElementById('sliderHighlight');
+    var blurbContainer = document.querySelector('.rsvp-focus-slider-container');
+    
+    if (activeWordEl && highlightBox && blurbContainer) {
+        var containerRect = blurbContainer.getBoundingClientRect();
+        var wordRect = activeWordEl.getBoundingClientRect();
+        
+        // Exact spatial positioning without layout shifts
+        highlightBox.style.left   = (wordRect.left - containerRect.left - 3) + 'px';
+        highlightBox.style.top    = (wordRect.top - containerRect.top - 1) + 'px';
+        highlightBox.style.width  = (wordRect.width + 6) + 'px';
+        highlightBox.style.height = (wordRect.height + 2) + 'px';
+    }
 }
 
 function playRSVP() {
     clearTimeout(rsvp.timer);
     if (!rsvp.isPlaying || !rsvp.active) return;
     
+    var t = rsvpThemes[rsvp.theme];
+    var currentWord = "";
+
+    if (t === 'focusSlider') {
+        var blurbWords = sliderBlurbs[currentBlurbIndex];
+        if (blurbWords) {
+            currentWord = blurbWords[wordIndexInBlurb] || "";
+        }
+    } else {
+        currentWord = rsvp.words[rsvp.index] || "";
+    }
+    
     renderRSVP();
     
-    var w = rsvp.words[rsvp.index] || "";
     var delay = 60000 / rsvp.wpm;
-    
-    // Add natural breathing pauses for punctuation and long words
-    if (/[.?!]$/.test(w)) delay *= 2.0;
-    else if (/[,;:]$/.test(w)) delay *= 1.5;
-    else if (w.length > 8) delay *= 1.2;
+    if (/[.?!]$/.test(currentWord)) delay *= 2.0;
+    else if (/[,;:]$/.test(currentWord)) delay *= 1.5;
+    else if (currentWord.length > 8) delay *= 1.2;
 
     rsvp.timer = setTimeout(function() {
-        if (rsvp.index < rsvp.words.length - 1) {
-            rsvp.index++;
-            playRSVP();
+        if (t === 'focusSlider') {
+            var currentBlurb = sliderBlurbs[currentBlurbIndex];
+            if (wordIndexInBlurb < currentBlurb.length - 1) {
+                wordIndexInBlurb++;
+                rsvp.index = (currentBlurbIndex * 45) + wordIndexInBlurb;
+                playRSVP();
+            } else if (currentBlurbIndex < sliderBlurbs.length - 1) {
+                // Instantly swap blurb block container and loop forward
+                currentBlurbIndex++;
+                wordIndexInBlurb = 0;
+                rsvp.index = (currentBlurbIndex * 45) + wordIndexInBlurb;
+                playRSVP();
+            } else {
+                rsvp.isPlaying = false;
+            }
         } else {
-            rsvp.isPlaying = false;
+            if (rsvp.index < rsvp.words.length - 1) {
+                rsvp.index++;
+                playRSVP();
+            } else {
+                rsvp.isPlaying = false;
+            }
         }
     }, delay);
 }
@@ -1142,7 +1262,11 @@ window.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowLeft') { e.preventDefault(); toggleRSVPTheme(-1); return; }
         if (e.key === '5') { e.preventDefault(); stopRSVP(); showTOCScreen(); return; }
         if (e.key === '0') { e.preventDefault(); stopRSVP(); return; }
-        return; // Block default navigation keys while in Speed Reader Mode
+        
+        // Let structural resizing * # hotkeys operate within RSVP theme screens
+        if (e.key === '*') { e.preventDefault(); adjustTextSize(-2); return; }
+        if (e.key === '#') { e.preventDefault(); adjustTextSize(2); return; }
+        return; // Block other default navigation keys while speed reading
     }
 
     if (uiState === 'READER') {
@@ -1191,7 +1315,12 @@ window.addEventListener('keydown', function (e) {
     }
 });
 
-window.addEventListener('resize', updateReaderWidthVar);
+window.addEventListener('resize', function() {
+    updateReaderWidthVar();
+    if (rsvp.active && rsvpThemes[rsvp.theme] === 'focusSlider') {
+        recalculateSliderPositions();
+    }
+});
 </script>
 </body>
 </html>
